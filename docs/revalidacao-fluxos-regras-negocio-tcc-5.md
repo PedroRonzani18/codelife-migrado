@@ -72,6 +72,11 @@ tela envia o registro de progresso.
 | Abrir discussão registra "skipped". | Divergência/ambiguidade | "toggleSkip" associa discussão a "skipped" ("Slide.jsx:230-250"). O significado pedagógico e seu efeito precisam de decisão. |
 | Último slide concluído só existe em memória. | Regra técnica | O componente informa que o estado não persiste ao sair da aula ("Slide.jsx:28-35"). Não há motivo funcional demonstrado para repetir essa limitação. |
 
+**Pós-condições.** Um slide não bloqueante ou aprovado habilita a continuação
+do percurso; o último slide solicita o registro da conclusão do nível. A
+liberação efetiva de ilhas e níveis deve ser retestada porque há evidência de
+comportamento inconsistente entre o mapa e o percurso.
+
 **Exceção registrada.** T03 observou a terceira ilha bloqueada no mapa, mas
 acessível ao percorrer slides. Essa diferença deve ser tratada como divergência
 de regra de acesso/progressão, e não como comportamento automaticamente
@@ -100,6 +105,16 @@ escuta "postMessage" e envia sinal de prontidão ao iframe
 | Sandbox remoto disponível é requisito para validar todo o fluxo. | Adaptação possível | T06 registrou prévia/sandbox em 404. A intenção de experimentar código não depende necessariamente desse domínio ou protocolo. |
 | Atividade de código efetivamente bloqueia avanço. | Divergência/ambiguidade | A intenção do código e T05 divergem. É necessário reproduzir com dados e sandbox controlados antes de declarar preservação. |
 
+**Pós-condições.** Quando a regra é considerada aprovada, a atividade informa
+sucesso e solicita o desbloqueio do slide. Quando não é aprovada, deveria
+permanecer bloqueada e devolver uma mensagem de erro; o resultado de T05
+impede tratar essa pós-condição como validada.
+
+**Exceção relevante.** A falha de prévia ou de sandbox pode impedir a execução
+visual sem, por si só, demonstrar que as regras locais de código são inválidas.
+O diagnóstico deve registrar qual subetapa falhou: carregamento do editor,
+avaliação local, comunicação com o iframe ou execução remota.
+
 O repositório contém páginas em "sandbox/", mas não prova a hospedagem atual
 de "codelife.tech"; não se deve inferir indisponibilidade permanente a partir
 do 404 observado no ambiente local.
@@ -127,6 +142,16 @@ nível quanto de ilha e não representa o slide atual.
 | Servidor valida existência do item, pré-requisito e aprovação. | Adaptação possível | A API não confirma esses critérios antes de gravar. Reforçar o backend preserva a finalidade e reduz inconsistências. |
 | Persistência apenas no fim de nível. | Regra técnica | A falta de checkpoint por slide decorre do desenho atual e pode ser superada sem mudar o objetivo de acompanhamento. |
 
+**Pós-condições.** Depois de uma gravação aceita, o histórico do estudante
+deve conter a unidade e seu estado; uma conclusão já registrada não deve ser
+rebaixada pelo endpoint atual. A recuperação desse histórico orienta as telas
+de navegação e liberação.
+
+**Exceções relevantes.** O endpoint não valida existência, pré-requisito ou
+aprovação antes de aceitar o identificador recebido. Além disso, o mesmo campo
+armazena ilhas e níveis; qualquer migração precisa preservar ou redefinir essa
+semântica de forma explícita.
+
 ## F-04 — Projetos, codeblocks e compartilhamento
 
 **Ator e objetivo.** Estudante cria/edita uma produção, a visualiza e, quando
@@ -152,6 +177,16 @@ Electron/Xvfb; é infraestrutura, não regra de domínio.
 | Screenshot por Electron/Xvfb em disco local. | Regra técnica | Pode ser substituído ou removido do primeiro recorte sem alterar o CRUD essencial. |
 | Há um único CodeBlock por estudante/ilha. | Divergência/ambiguidade | A intenção é sugerida pelo desafio final, mas não há restrição evidente de unicidade "(uid, lid)". Decidir antes de migrar dados. |
 
+**Pós-condições.** Uma operação de criação ou edição bem-sucedida deve deixar
+o conteúdo recuperável para o autor e, quando o compartilhamento estiver
+habilitado, pelo contrato público de usuário e slug. Um CodeBlock aprovado pode
+também produzir atualização de progresso da ilha.
+
+**Exceções relevantes.** T08 não confirmou a persistência da edição de projeto
+e T09 observou URL pública de CodeBlock em 404. A captura de tela assíncrona
+pode falhar independentemente da gravação da produção e não deve determinar o
+resultado do CRUD.
+
 ## F-05 — Colaboração, discussões e comentários
 
 **Ator e objetivo.** Proprietário inclui colaboradores em projeto; estudantes
@@ -170,6 +205,16 @@ discussão é "slide" ("db/threads.js:1-42").
 | Discussões pertencem a slides. | Invariante candidata | O modelo torna o escopo explícito. Não assumir discussões em projetos/codeblocks como capacidade atual. |
 | Abrir discussão equivale a pular conteúdo. | Divergência/ambiguidade | O acoplamento está no cliente, mas sua finalidade pedagógica precisa ser decidida. |
 | Curtidas, denúncias, ranking e moderação. | Fora do recorte potencial | São capacidades reais, porém não necessárias aos fluxos priorizados, salvo decisão posterior. |
+
+**Pós-condições.** Incluir ou remover uma colaboração altera a relação entre
+usuário e projeto; uma thread ou comentário aceito deve ficar associado ao
+slide e disponível na discussão correspondente. O acesso a projeto precisa
+permanecer condicionado a autoria ou colaboração autorizada.
+
+**Exceções relevantes.** A criação e remoção de colaboradores não verificam
+explicitamente se o solicitante é proprietário. Discussões de projetos e
+CodeBlocks não devem ser inferidas do desenho polimórfico, pois o modelo
+declara apenas o tipo "slide" como uso atual.
 
 A análise anterior também registrou que a interface envia denúncia de comentário
 como "contentType=thread", embora o componente suporte "comment". Isso deve
