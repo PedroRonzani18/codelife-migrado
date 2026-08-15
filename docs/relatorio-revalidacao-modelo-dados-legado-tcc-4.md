@@ -36,44 +36,44 @@ Setas lógicas não são necessariamente FKs físicas. Essa distinção é essen
 
 ### Identidade e perfil
 
-| Entidade | Finalidade e campos relevantes | Relações, constraints e observações |
-|---|---|---|
-| `users` (Canon) | Identidade, credenciais e papel; o código local usa `id`, `username`, `name`, `email` e `role`. | É externo a `db/`. Uma modelagem futura deve definir a fronteira entre identidade/autenticação e domínio CodeLife. |
-| `userprofiles` | Perfil CodeLife: `uid`, bio, avatar, gênero, escola/localidade, CPF, respostas JSON, `sharing`, cota de denúncias e idioma. `coins` e `streak` são marcados como depreciados. | `uid` é PK e declara referência a `users.id`, portanto a relação Usuário–Perfil 1:1 é **confirmada**. `sid` e `gid` apontam para escola e localidade. O bootstrap tenta criar somente a FK `userprofiles.uid → users.id`. CPF e respostas de pesquisa exigem classificação de privacidade. |
-| `geos` | Localidades: `id`, `id_ibge`, `sumlevel`, `name`. | PK em `id`; referenciada por escola e perfil. Não há unicidade declarada para `id_ibge`. |
-| `schools` | Escolas: `id`, `gid`, nome, turmas, idade e matrículas. | `belongsTo geos`; é referenciada por `userprofiles.sid`. O modelo declara as referências; o bootstrap também tenta a FK `schools.gid → geos.id`. |
-| `contestentries` | Inscrição de concurso: `uid`, elegibilidade, projeto, data e descrição. O próprio modelo marca o concurso como adiado e `eligible` como legado. | `uid` como PK torna Usuário–Inscrição 1:0..1. `project_id` não tem FK/unique declarada. Tratar como módulo desativado, não núcleo a preservar. |
+| Entidade | Classificação | Finalidade e campos relevantes | Relações, constraints e observações | Módulos/fluxos dependentes |
+|---|---|---|---|---|
+| `users` (Canon) | **Confirmado** | Identidade, credenciais e papel; o código local usa `id`, `username`, `name`, `email` e `role`. | É externo a `db/`. Uma modelagem futura deve definir a fronteira entre identidade/autenticação e domínio CodeLife. | Autenticação, perfil, progresso, produções, colaboração, discussões, curtidas e denúncias. |
+| `userprofiles` | **Confirmado** | Perfil CodeLife: `uid`, bio, avatar, gênero, escola/localidade, CPF, respostas JSON, `sharing`, cota de denúncias e idioma. `coins` e `streak` são marcados como depreciados. | `uid` é PK e declara referência a `users.id`, portanto a relação Usuário–Perfil 1:1 é **confirmada**. `sid` e `gid` apontam para escola e localidade. O bootstrap tenta criar somente a FK `userprofiles.uid → users.id`. CPF e respostas de pesquisa exigem classificação de privacidade. | Perfil, visibilidade de produções, discussão, colaboração, ranking e administração. |
+| `geos` | **Descoberto na revalidação** | Localidades: `id`, `id_ibge`, `sumlevel`, `name`. | PK em `id`; referenciada por escola e perfil. Não há unicidade declarada para `id_ibge`. | Cadastro/edição de perfil, filtros por localidade e checkpoints. |
+| `schools` | **Descoberto na revalidação** | Escolas: `id`, `gid`, nome, turmas, idade e matrículas. | `belongsTo geos`; é referenciada por `userprofiles.sid`. O modelo declara as referências; o bootstrap também tenta a FK `schools.gid → geos.id`. | Cadastro/edição de perfil, checkpoints e dados auxiliares. |
+| `contestentries` | **Descoberto na revalidação** | Inscrição de concurso: `uid`, elegibilidade, projeto, data e descrição. O próprio modelo marca o concurso como adiado e `eligible` como legado. | `uid` como PK torna Usuário–Inscrição 1:0..1. `project_id` não tem FK/unique declarada. Tratar como módulo desativado, não núcleo a preservar. | Concurso de projetos, atualmente adiado/desabilitado. |
 
 ### Conteúdo pedagógico e progresso
 
-| Entidade | Finalidade e campos relevantes | Relações, constraints e observações |
-|---|---|---|
-| `islands` | Raiz da trilha: ID, nome, `ordering`, tema, ícone, `is_latest`, desafio final (`prompt`, `initialcontent`, `rulejson`, `cheatsheet`, `victory`) e variantes `pt_*`. | `hasMany levels` por `levels.lid`. PK textual. Não há unicidade de ordenação nem garantia de exatamente uma ilha `is_latest`; o bootstrap só corrige a ausência total de uma ilha marcada. |
-| `levels` | Contêiner de slides: ID, nome/descrição, `ordering`, `lid` e variantes PT. | `belongsTo islands` e `hasMany slides`. A associação pede `foreignKeyConstraint: true`, mas o SQL auxiliar não cria essa FK. Não há unique em `(lid, ordering)`. |
-| `slides` | Unidade de conteúdo: tipo, título, HTML, `quizjson`, `rulejson`, `mlid`, ordem, variantes PT e `lax`. | `belongsTo levels`; `hasMany threads` por `subject_id`. Quiz/atividade não são tabelas: são JSONs/texto no próprio Slide. Sem unique em `(mlid, ordering)`. |
-| `rules` | Templates de mensagens de validação, por tipo e idioma. | É lida/editada por `api/rulesRoute.js`. Qualquer relação com JSONs de regra é lógica; não existe FK a ilhas ou slides. |
-| `userprogress` | Conclusão: `uid`, `level`, `gems` depreciado, `datecompleted`, `status`. `level` mistura IDs de níveis e ilhas. | `POST /api/userprogress/save` usa `findOrCreate({ uid, level })` e grava `completed`/`skipped`. Há PK artificial `id`, mas nenhuma FK ou unique em `(uid, level)`. A rota impede rebaixar `completed`, mas não valida existência do ID, pré-requisitos ou enum de status. |
-| `glossarywords` | Termos e definições em inglês/português. | Conteúdo global recuperado por rota; não há FK ou associação persistida com Slide. |
+| Entidade | Classificação | Finalidade e campos relevantes | Relações, constraints e observações | Módulos/fluxos dependentes |
+|---|---|---|---|---|
+| `islands` | **Confirmado** | Raiz da trilha: ID, nome, `ordering`, tema, ícone, `is_latest`, desafio final (`prompt`, `initialcontent`, `rulejson`, `cheatsheet`, `victory`) e variantes `pt_*`. | `hasMany levels` por `levels.lid`. PK textual. Não há unicidade de ordenação nem garantia de exatamente uma ilha `is_latest`; o bootstrap só corrige a ausência total de uma ilha marcada. | Mapa, navegação, níveis/slides, CMS, desafio final, progresso e CodeBlocks. |
+| `levels` | **Confirmado** | Contêiner de slides: ID, nome/descrição, `ordering`, `lid` e variantes PT. | `belongsTo islands` e `hasMany slides`. A associação pede `foreignKeyConstraint: true`, mas o SQL auxiliar não cria essa FK. Não há unique em `(lid, ordering)`. | Navegação da trilha, Slides, progresso, CMS e plano de aula. |
+| `slides` | **Confirmado** | Unidade de conteúdo: tipo, título, HTML, `quizjson`, `rulejson`, `mlid`, ordem, variantes PT e `lax`. | `belongsTo levels`; `hasMany threads` por `subject_id`. Quiz/atividade não são tabelas: são JSONs/texto no próprio Slide. Sem unique em `(mlid, ordering)`. | Aula, quiz, editor, discussões, progresso, CMS e plano de aula. |
+| `rules` | **Descoberto na revalidação** | Templates de mensagens de validação, por tipo e idioma. | É lida/editada por `api/rulesRoute.js`. Qualquer relação com JSONs de regra é lógica; não existe FK a ilhas ou slides. | Editor, validação de código, mensagens de erro e CMS. |
+| `userprogress` | **Parcialmente confirmado** | Conclusão: `uid`, `level`, `gems` depreciado, `datecompleted`, `status`. `level` mistura IDs de níveis e ilhas. | `POST /api/userprogress/save` usa `findOrCreate({ uid, level })` e grava `completed`/`skipped`. Há PK artificial `id`, mas nenhuma FK ou unique em `(uid, level)`. A rota impede rebaixar `completed`, mas não valida existência do ID, pré-requisitos ou enum de status. | Desbloqueio, navegação, mapa, desafio final, ranking e continuidade da trilha. |
+| `glossarywords` | **Parcialmente confirmado** | Termos e definições em inglês/português. | Conteúdo global recuperado por rota; não há FK ou associação persistida com Slide. | Glossário, aula, plano de aula e CMS. |
 
 ### Produções, colaboração e interação social
 
-| Entidade | Finalidade e campos relevantes | Relações, constraints e observações |
-|---|---|---|
-| `projects` | Produção HTML: `name`, `studentcontent`, dono `uid`, data, `status`, `prompted`, `featured`, `slug`. | Associa usuário/perfil e colaboradores N:M por `projects_userprofiles`; recebe reports. PK e `slug` único. Editar/excluir filtra proprietário, mas adicionar/remover colaborador exige só sessão. |
-| `projects_userprofiles` | Vínculo de colaboração: `pid`, `uid`. | A tabela e `belongsToMany` confirmam Projeto–Perfil **N:M**. Não há PK, FKs ou unique `(pid, uid)`; duplicidades e vínculos órfãos são possíveis. |
-| `codeblocks` | Código do estudante no desafio final: nome, conteúdo, `previewblob` depreciado, `lid`, `uid`, `status`, `featured`, `slug`. | Associa usuário/perfil; recebe likes e reports. Há PK e `slug` único, mas não unique `(uid, lid)` nem FK para ilha. Embora o comentário declare um CodeBlock por estudante/ilha, é regra não garantida. A criação usa `req.body.uid`, não `req.user.id`. |
-| `threads` | Tópico: título, conteúdo, data, `subject_type`, `subject_id`, autor, `status`. | Associa usuário/perfil, slide, comentários, likes e reports. O código declara que o tipo usado atualmente é somente `slide`. `(subject_type, subject_id)` é polimórfico e não tem FK/check. |
-| `comments` | Resposta: autor, data, título, conteúdo, `thread_id`, `status`. | É carregada por `threads.hasMany comments` e associa usuário/perfil, likes e reports. Não declara `belongsTo threads`, FK ou cascata; `thread_id` pode ficar órfão. |
-| `likes` | Curtidas: autor, `likeid`, `type`. | Pode apontar para CodeBlock, Thread ou Comentário. O próprio modelo alerta para falsos positivos sem filtro por `type`. A rota usa `findOrCreate({ uid, likeid, type })`, mas não há FK/check/unique composto físico. |
-| `reports` | Denúncias: autor, motivo, comentário, `report_id`, `type`, `status`, `permalink` depreciado. | Mesmo padrão polimórfico de Likes, para Projeto, CodeBlock, Thread e Comentário. As rotas contam reports novos para ocultar/banir. Não há FKs/checks/unique e alvos excluídos podem ficar sem referência. |
+| Entidade | Classificação | Finalidade e campos relevantes | Relações, constraints e observações | Módulos/fluxos dependentes |
+|---|---|---|---|---|
+| `projects` | **Confirmado** | Produção HTML: `name`, `studentcontent`, dono `uid`, data, `status`, `prompted`, `featured`, `slug`. | Associa usuário/perfil e colaboradores N:M por `projects_userprofiles`; recebe reports. PK e `slug` único. Editar/excluir filtra proprietário, mas adicionar/remover colaborador exige só sessão. | Criação/edição, colaboração, perfil, compartilhamento, busca, destaque e moderação. |
+| `projects_userprofiles` | **Confirmado** | Vínculo de colaboração: `pid`, `uid`. | A tabela e `belongsToMany` confirmam Projeto–Perfil **N:M**. Não há PK, FKs ou unique `(pid, uid)`; duplicidades e vínculos órfãos são possíveis. | Colaboração, autorização de edição e listagem de projetos compartilhados. |
+| `codeblocks` | **Confirmado** | Código do estudante no desafio final: nome, conteúdo, `previewblob` depreciado, `lid`, `uid`, `status`, `featured`, `slug`. | Associa usuário/perfil; recebe likes e reports. Há PK e `slug` único, mas não unique `(uid, lid)` nem FK para ilha. Embora o comentário declare um CodeBlock por estudante/ilha, é regra não garantida. A criação usa `req.body.uid`, não `req.user.id`. | Desafio final, perfil, listagens, compartilhamento, screenshots, curtidas e moderação. |
+| `threads` | **Parcialmente confirmado** | Tópico: título, conteúdo, data, `subject_type`, `subject_id`, autor, `status`. | Associa usuário/perfil, slide, comentários, likes e reports. O código declara que o tipo usado atualmente é somente `slide`. `(subject_type, subject_id)` é polimórfico e não tem FK/check. | Discussões de Slides, perfil, curtidas, denúncias e moderação. |
+| `comments` | **Confirmado** | Resposta: autor, data, título, conteúdo, `thread_id`, `status`. | É carregada por `threads.hasMany comments` e associa usuário/perfil, likes e reports. Não declara `belongsTo threads`, FK ou cascata; `thread_id` pode ficar órfão. | Discussões de Slides, perfil, curtidas, denúncias e moderação. |
+| `likes` | **Descoberto na revalidação** | Curtidas: autor, `likeid`, `type`. | Pode apontar para CodeBlock, Thread ou Comentário. O próprio modelo alerta para falsos positivos sem filtro por `type`. A rota usa `findOrCreate({ uid, likeid, type })`, mas não há FK/check/unique composto físico. | Interação social em CodeBlocks e discussões; cartões/listagens de conteúdo. |
+| `reports` | **Descoberto na revalidação** | Denúncias: autor, motivo, comentário, `report_id`, `type`, `status`, `permalink` depreciado. | Mesmo padrão polimórfico de Likes, para Projeto, CodeBlock, Thread e Comentário. As rotas contam reports novos para ocultar/banir. Não há FKs/checks/unique e alvos excluídos podem ficar sem referência. | Moderação, visibilidade de produções e discussões, administração e notificações. |
 
 ### Estruturas auxiliares ou obsoletas
 
-| Estrutura | Evidência e impacto |
-|---|---|
-| `searches` | Modelo marcado como não usado; a busca atual consulta usuários/projetos com trigrams. Não deve entrar no recorte sem evidência de uso. |
-| `siteconfigs` | Marcado como não usado; configurações foram movidas para variáveis de ambiente. |
-| `previewblob`, `coins`, `streak`, `gems`, `eligible`, `permalink` | O código os marca como depreciados, não usados ou incompletos. Não eliminar dados sem inspeção, mas não pressupor requisito vigente. |
+| Estrutura | Classificação | Módulos/fluxos dependentes | Evidência e impacto |
+|---|---|---|---|
+| `searches` | **Descoberto na revalidação** | Nenhum fluxo ativo confirmado; busca de usuários/projetos usa trigrams. | Modelo marcado como não usado. Não deve entrar no recorte sem evidência de uso. |
+| `siteconfigs` | **Descoberto na revalidação** | Nenhum fluxo ativo confirmado; configurações são variáveis de ambiente. | Marcado como não usado. |
+| `previewblob`, `coins`, `streak`, `gems`, `eligible`, `permalink` | **Descoberto na revalidação** | Fluxos históricos/depreciados de preview, experiência, concurso e moderação. | O código os marca como depreciados, não usados ou incompletos. Não eliminar dados sem inspeção, mas não pressupor requisito vigente. |
 
 ## Confronto com o modelo conceitual do TCC
 
