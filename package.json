@@ -9,7 +9,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "bootstrap": "node scripts/setup.mjs",
-    "dev": "turbo run dev --filter=api --filter=web",
+    "dev": "turbo run dev --filter=@codelife/api --filter=@codelife/web",
     "dev:api": "pnpm --filter @codelife/api dev",
     "dev:web": "pnpm --filter @codelife/web dev",
     "db:up": "node scripts/db.mjs up",

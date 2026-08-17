@@ -1,7 +1,9 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, SlideType } from '@prisma/client';
 
+// pnpm invokes this workspace from apps/api; the user configuration is root-level.
+config({ path: '../../.env' });
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is required to seed the experimental fixture');
 
