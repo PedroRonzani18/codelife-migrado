@@ -1,0 +1,5 @@
+{
+  "extends": "@codelife/tsconfig/base.json",
+  "compilerOptions": { "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo", "module": "ESNext", "moduleResolution": "bundler", "noEmit": true },
+  "include": ["vite.config.ts", "playwright.config.ts"]
+}

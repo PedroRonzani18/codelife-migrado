@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SlideType {
+  TextText
+  TextImage
+  TextCode
+}
+
+model User {
+  id          String         @id @default(cuid())
+  key         String         @unique
+  username    String         @unique
+  displayName String
+  createdAt   DateTime       @default(now())
+  progress    UserProgress[]
+}
+
+model Island {
+  id        String  @id @default(cuid())
+  key       String  @unique
+  title     String
+  sortOrder Int
+  levels    Level[]
+
+  @@unique([sortOrder])
+}
+
+model Level {
+  id        String         @id @default(cuid())
+  key       String         @unique
+  islandId  String
+  title     String
+  sortOrder Int
+  island    Island         @relation(fields: [islandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  slides    Slide[]
+  progress  UserProgress[]
+
+  @@unique([islandId, sortOrder])
+}
+
+model Slide {
+  id        String    @id @default(cuid())
+  key       String    @unique
+  levelId   String
+  title     String
+  sortOrder Int
+  type      SlideType
+  content   String
+  level     Level     @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([levelId, sortOrder])
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  levelId     String
+  completedAt DateTime
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  level       Level    @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, levelId])
+}

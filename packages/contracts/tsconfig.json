@@ -1,0 +1,5 @@
+{
+  "extends": "@codelife/tsconfig/base.json",
+  "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext", "outDir": "dist", "declaration": true },
+  "include": ["src/**/*.ts"]
+}
