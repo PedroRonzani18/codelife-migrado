@@ -1,4 +1,4 @@
-import type { IslandDetail } from '@codelife/contracts';
+import type { IslandDetail } from 'contracts';
 export function IslandFoundation({ island }: { island: IslandDetail }) {
   return <section className="panel" aria-labelledby="island-title">
     <p className="eyebrow">Fixture experimental</p>

@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClientError } from '../api/client';
-import { getSession, logout, startExperimentalSession } from '../api/auth';
-import { getExperimentalIsland } from '../api/learning';
-import { ExperimentalLogin } from '../features/auth/ExperimentalLogin';
-import { IslandFoundation } from '../modules/learning/IslandFoundation';
+import { ApiClientError } from '@/api/client';
+import { getSession, logout, startExperimentalSession } from '@/api/auth';
+import { getExperimentalIsland } from '@/api/learning';
+import { ExperimentalLogin } from '@/features/auth/ExperimentalLogin';
+import { IslandFoundation } from '@/modules/learning/IslandFoundation';
 
 const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
