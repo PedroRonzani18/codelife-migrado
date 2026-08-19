@@ -1,2 +1,2 @@
-import { createTypeScriptConfig } from '@codelife/eslint-config';
+import { createTypeScriptConfig } from 'eslint-config';
 export default createTypeScriptConfig();

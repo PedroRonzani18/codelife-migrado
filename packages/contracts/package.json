@@ -1,5 +1,5 @@
 {
-  "name": "@codelife/contracts",
+  "name": "contracts",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,13 +16,13 @@
   },
   "dependencies": { "zod": "3.25.76" },
   "devDependencies": {
-    "@codelife/eslint-config": "workspace:*",
-    "@codelife/tsconfig": "workspace:*",
+    "eslint-config": "workspace:*",
+    "tsconfig": "workspace:*",
     "@eslint/js": "9.32.0",
     "eslint": "9.32.0",
     "globals": "15.15.0",
     "typescript": "5.8.3",
     "typescript-eslint": "8.38.0",
-    "vitest": "3.2.4"
+    "vitest": "3.2.7"
   }
 }

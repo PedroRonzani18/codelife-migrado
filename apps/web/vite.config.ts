@@ -1,3 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
-export default defineConfig({ plugins: [react()] });
+import { fileURLToPath, URL } from 'node:url';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      contracts: fileURLToPath(new URL('../../packages/contracts/src/index.ts', import.meta.url))
+    }
+  }
+});

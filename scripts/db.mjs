@@ -6,8 +6,8 @@ const commands = {
   up: () => run('docker', [...compose, 'up', '--detach', '--wait']),
   down: () => run('docker', [...compose, 'down']),
   status: () => run('docker', [...compose, 'ps']),
-  migrate: () => runPnpm(['--filter', '@codelife/api', 'prisma:migrate:dev']),
-  seed: () => runPnpm(['--filter', '@codelife/api', 'prisma:seed']),
+  migrate: () => runPnpm(['--filter', 'api', 'prisma:migrate:dev']),
+  seed: () => runPnpm(['--filter', 'api', 'prisma:seed']),
 };
 assertNode24();
 if (!commands[command]) throw new Error('Usage: pnpm db:<up|down|status|migrate|seed>');
