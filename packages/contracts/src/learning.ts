@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { stableKeySchema } from '@codelife/contracts/common';
+import { stableKeySchema } from './common.js';
 
 export const slideTypeSchema = z.enum(['TextText', 'TextImage', 'TextCode']);
 export type SlideType = z.infer<typeof slideTypeSchema>;

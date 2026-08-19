@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { stableKeySchema } from '@codelife/contracts/common';
+import { stableKeySchema } from './common.js';
 
 export const currentUserSchema = z.object({
   id: stableKeySchema,

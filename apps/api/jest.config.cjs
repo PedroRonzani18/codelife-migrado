@@ -6,7 +6,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@codelife/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
-    '^@codelife/contracts/(.*)$': '<rootDir>/../../packages/contracts/src/$1.ts'
+    '^@codelife/contracts/(.*)$': '<rootDir>/../../packages/contracts/src/$1.ts',
+    '^\\./common\\.js$': '<rootDir>/../../packages/contracts/src/common.ts'
   },
   collectCoverageFrom: [
     'src/**/*.ts',

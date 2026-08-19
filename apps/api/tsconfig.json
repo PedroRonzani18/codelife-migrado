@@ -9,11 +9,7 @@
     "emitDecoratorMetadata": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@codelife/contracts": ["../../packages/contracts/src/index.ts"],
-      "@codelife/contracts/*": ["../../packages/contracts/src/*.ts"]
-    }
+    "paths": { "@/*": ["src/*"] }
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts"]
 }
