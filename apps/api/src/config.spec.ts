@@ -3,7 +3,7 @@ import { validateConfig } from './config';
 describe('validateConfig', () => {
   const required = {
     DATABASE_URL: 'postgresql://localhost:5432/codelife',
-    JWT_SECRET: 'integration-test-secret-with-32-characters',
+    JWT_SECRET: 'x'.repeat(32),
   };
 
   it('applies safe development defaults', () => {
