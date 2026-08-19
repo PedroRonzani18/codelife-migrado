@@ -27,7 +27,9 @@ os timestamps foram preenchidos e as novas restrições impediram remoções em
 cascata da árvore de aprendizado.
 
 A validação visual manual de cinco minutos não foi executada. Antes de encerrar
-o card, os workflows do GitHub precisam concluir com sucesso no PR.
+o card, os workflows do GitHub precisam concluir com sucesso no PR. O CodeQL é
+executado no CI sem upload de resultados porque o repositório privado não tem o
+recurso Code Scanning habilitado na conta atual.
 
 Estas evidências demonstram a implementação e a reprodutibilidade técnica da
 fundação. Elas não constituem resultados de avaliação comparativa da
