@@ -23,6 +23,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/codelife_ci?schema=public
       - run: pnpm test:api:cov
 
   verify:

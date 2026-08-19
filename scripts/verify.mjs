@@ -77,6 +77,7 @@ try {
     WEB_E2E_URL: webUrl,
   };
   assertIsolatedTestDatabase(env.DATABASE_URL);
+  runPnpm(['--filter', 'api', 'prisma:generate'], { env });
   runPnpm(['--filter', 'api', 'prisma:migrate:deploy'], { env });
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });

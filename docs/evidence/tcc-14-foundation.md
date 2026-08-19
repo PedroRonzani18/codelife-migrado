@@ -26,9 +26,8 @@ Também foi validado separadamente o upgrade de um banco previamente povoado:
 os timestamps foram preenchidos e as novas restrições impediram remoções em
 cascata da árvore de aprendizado.
 
-A validação visual manual de cinco minutos não foi executada. Os workflows
-adicionados ainda precisam da primeira execução no GitHub para comprovar o
-comportamento no ambiente remoto.
+A validação visual manual de cinco minutos não foi executada. Antes de encerrar
+o card, os workflows do GitHub precisam concluir com sucesso no PR.
 
 Estas evidências demonstram a implementação e a reprodutibilidade técnica da
 fundação. Elas não constituem resultados de avaliação comparativa da
