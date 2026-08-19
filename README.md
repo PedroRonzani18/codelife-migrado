@@ -23,9 +23,18 @@ pnpm db:seed
 pnpm dev
 ```
 
+`pnpm bootstrap` cria `apps/api/.env` e `apps/web/.env` a partir dos arquivos
+`.env.example` correspondentes, apenas quando ainda não existirem. Segredos e
+infraestrutura pertencem ao arquivo da API; no web só podem existir variáveis
+`VITE_*`, que são públicas no bundle do browser.
+
 Abra `http://localhost:5173`. Em desenvolvimento, o botão **Iniciar sessão
 experimental** cria uma sessão apenas para a pessoa seed `aluna.demo`. Em
 produção esse mecanismo é recusado pelo servidor.
+
+A API expõe liveness em `/health/live`, readiness do PostgreSQL em
+`/health/ready` e Swagger em `/docs` somente quando `SWAGGER_ENABLED=true`.
+Erros e logs são correlacionados por `x-request-id` sem expor detalhes internos.
 
 Consulte [a configuração local](docs/guides/local-setup.md), os
 [comandos](docs/guides/commands.md) e os [ADRs](docs/adr).
