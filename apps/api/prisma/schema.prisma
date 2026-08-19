@@ -18,14 +18,17 @@ model User {
   username    String         @unique
   displayName String
   createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   progress    UserProgress[]
 }
 
 model Island {
-  id        String  @id @default(cuid())
-  key       String  @unique
+  id        String   @id @default(cuid())
+  key       String   @unique
   title     String
   sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   levels    Level[]
 
   @@unique([sortOrder])
@@ -37,7 +40,9 @@ model Level {
   islandId  String
   title     String
   sortOrder Int
-  island    Island         @relation(fields: [islandId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  island    Island         @relation(fields: [islandId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   slides    Slide[]
   progress  UserProgress[]
 
@@ -52,7 +57,9 @@ model Slide {
   sortOrder Int
   type      SlideType
   content   String
-  level     Level     @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  level     Level     @relation(fields: [levelId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([levelId, sortOrder])
 }
@@ -62,8 +69,8 @@ model UserProgress {
   userId      String
   levelId     String
   completedAt DateTime
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  level       Level    @relation(fields: [levelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  level       Level    @relation(fields: [levelId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([userId, levelId])
 }

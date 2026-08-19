@@ -1,6 +1,14 @@
 import { Module } from '@nestjs/common';
-import { LearningController } from './learning.controller';
-import { LearningRepository } from './learning.repository';
-import { LearningService } from './learning.service';
-@Module({ controllers: [LearningController], providers: [LearningRepository, LearningService] })
+import { IslandsController } from './islands/islands.controller';
+import { ISLANDS_REPOSITORY } from './islands/islands.repository.port';
+import { IslandsService } from './islands/islands.service';
+import { PrismaIslandsRepository } from './islands/prisma-islands.repository';
+
+@Module({
+  controllers: [IslandsController],
+  providers: [
+    { provide: ISLANDS_REPOSITORY, useClass: PrismaIslandsRepository },
+    IslandsService,
+  ],
+})
 export class LearningModule {}
