@@ -5,9 +5,16 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      contracts: fileURLToPath(new URL('../../packages/contracts/src/index.ts', import.meta.url))
-    }
+    alias: [
+      { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+      {
+        find: /^@codelife\/contracts\/(.+)$/,
+        replacement: `${fileURLToPath(new URL('../../packages/contracts/src/', import.meta.url))}$1.ts`
+      },
+      {
+        find: '@codelife/contracts',
+        replacement: fileURLToPath(new URL('../../packages/contracts/src/index.ts', import.meta.url))
+      }
+    ]
   }
 });

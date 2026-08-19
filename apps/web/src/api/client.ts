@@ -1,4 +1,4 @@
-import { apiErrorSchema } from 'contracts';
+import { apiErrorSchema } from '@codelife/contracts/errors';
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 

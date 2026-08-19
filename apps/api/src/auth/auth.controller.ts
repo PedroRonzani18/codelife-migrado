@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from
 import { ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { authSessionSchema } from 'contracts';
+import { authSessionSchema } from '@codelife/contracts/auth';
 import { AuthService } from './auth.service';
 import { clearSessionCookieOptions, sessionCookieOptions } from './cookies/auth-cookie';
 import { Public } from './decorators/public.decorator';

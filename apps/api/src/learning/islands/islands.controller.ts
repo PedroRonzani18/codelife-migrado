@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { stableKeySchema } from 'contracts';
+import { stableKeySchema } from '@codelife/contracts/common';
 import { ZodParsePipe } from '@/common/http/zod-parse.pipe';
 import { IslandsService } from './islands.service';
 

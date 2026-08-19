@@ -1,5 +1,5 @@
-import { apiErrorCodeSchema, apiValidationErrorDetailSchema } from 'contracts';
-import type { ApiErrorCode } from 'contracts';
+import { apiErrorCodeSchema, apiValidationErrorDetailSchema } from '@codelife/contracts/errors';
+import type { ApiErrorCode } from '@codelife/contracts/errors';
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Response } from 'express';

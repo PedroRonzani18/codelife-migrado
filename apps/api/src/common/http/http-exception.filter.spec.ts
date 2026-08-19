@@ -1,4 +1,4 @@
-import { apiErrorSchema } from 'contracts';
+import { apiErrorSchema } from '@codelife/contracts/errors';
 import {
   ArgumentsHost,
   BadRequestException,

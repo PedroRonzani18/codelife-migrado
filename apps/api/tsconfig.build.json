@@ -1,1 +1,11 @@
-{ "extends": "./tsconfig.json", "exclude": ["test", "prisma", "**/*.spec.ts"] }
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["src/*"],
+      "@codelife/contracts": ["../../packages/contracts/src/index.ts"],
+      "@codelife/contracts/*": ["../../packages/contracts/src/*.ts"]
+    }
+  },
+  "exclude": ["test", "prisma", "**/*.spec.ts"]
+}

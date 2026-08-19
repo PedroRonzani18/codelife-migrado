@@ -10,7 +10,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "contracts": ["../../packages/contracts/src/index.ts"]
+      "@codelife/contracts": ["../../packages/contracts/src/index.ts"],
+      "@codelife/contracts/*": ["../../packages/contracts/src/*.ts"]
     }
   },
   "include": ["src"]

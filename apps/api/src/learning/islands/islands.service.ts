@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { islandDetailSchema, type IslandDetail } from 'contracts';
+import { islandDetailSchema, type IslandDetail } from '@codelife/contracts/learning';
 import { ISLANDS_REPOSITORY, type IslandsRepositoryPort } from './islands.repository.port';
 
 @Injectable()

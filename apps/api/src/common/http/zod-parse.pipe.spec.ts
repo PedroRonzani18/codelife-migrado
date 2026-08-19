@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { stableKeySchema } from 'contracts';
+import { stableKeySchema } from '@codelife/contracts/common';
 import { ZodParsePipe } from './zod-parse.pipe';
 
 describe('ZodParsePipe', () => {
