@@ -9,7 +9,7 @@ conclusão da trilha.
 ## Pré-requisitos
 
 - Node.js 24;
-- Corepack e pnpm 10.33.0;
+- Corepack e pnpm 11.22.0;
 - Docker Compose para banco local e `pnpm verify`.
 
 ## Início rápido

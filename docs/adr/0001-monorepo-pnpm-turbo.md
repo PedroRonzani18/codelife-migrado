@@ -3,7 +3,7 @@
 **Contexto.** A fatia envolve web, API e contratos que precisam evoluir em
 conjunto, mas sem acoplamento direto entre aplicações.
 
-**Decisão.** Usar `apps/web`, `apps/api` e `packages/contracts`, com pnpm 10,
+**Decisão.** Usar `apps/web`, `apps/api` e `packages/contracts`, com pnpm 11,
 Node 24 e Turbo. Os contratos compartilham apenas shapes públicos Zod.
 
 **Alternativas.** Dois repositórios independentes aumentariam a duplicação; um

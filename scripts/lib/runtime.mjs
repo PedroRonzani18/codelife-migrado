@@ -12,6 +12,6 @@ export function run(command, args, options = {}) {
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} exited with ${result.status}`);
 }
 
-// The workspace `packageManager` pin makes the Corepack shim select pnpm 10.
+// The workspace `packageManager` pin makes the Corepack shim select pnpm 11.
 // Calling the shim directly also keeps nested Turbo commands on the same binary.
 export function runPnpm(args, options) { run('pnpm', args, options); }

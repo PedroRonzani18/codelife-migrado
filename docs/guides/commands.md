@@ -1,6 +1,6 @@
 # Comandos do repositório
 
-Execute os comandos a partir da raiz, com Node 24 e pnpm 10.33.0.
+Execute os comandos a partir da raiz, com Node 24 e pnpm 11.22.0.
 
 | Comando | Finalidade |
 | --- | --- |
