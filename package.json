@@ -1,0 +1,33 @@
+{
+  "name": "codelife-migrado",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "24.x",
+    "pnpm": "11.x"
+  },
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "bootstrap": "node scripts/setup.mjs",
+    "dev": "turbo run dev --filter=api --filter=web",
+    "dev:api": "pnpm --filter @codelife/contracts build && pnpm --filter api dev",
+    "dev:web": "pnpm --filter @codelife/contracts build && pnpm --filter web dev",
+    "db:up": "node scripts/db.mjs up",
+    "db:down": "node scripts/db.mjs down",
+    "db:status": "node scripts/db.mjs status",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:seed": "node scripts/db.mjs seed",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "build": "turbo run build",
+    "check": "node scripts/check.mjs",
+    "verify": "node scripts/verify.mjs",
+    "test:api:integration": "pnpm --filter api test:integration",
+    "test:api:cov": "pnpm --filter api test:cov",
+    "test:web:e2e": "pnpm --filter web test:e2e"
+  },
+  "devDependencies": {
+    "turbo": "2.10.11"
+  }
+}
