@@ -2,6 +2,14 @@ packages:
   - apps/*
   - packages/*
 
+allowBuilds:
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  esbuild: true
+  prisma: true
+  unrs-resolver: true
+
 overrides:
   deepmerge-ts: 8.0.1
   lodash: 4.18.1

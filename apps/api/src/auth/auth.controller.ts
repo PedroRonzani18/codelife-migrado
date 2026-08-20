@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 import { clearSessionCookieOptions, sessionCookieOptions } from './cookies/auth-cookie';
 import { Public } from './decorators/public.decorator';
 import { ExperimentalLoginThrottleGuard } from './guards/experimental-login-throttle.guard';
-import { AuthenticatedRequest } from './types/authenticated-request';
+import type { AuthenticatedRequest } from './types/authenticated-request';
 
 @ApiTags('auth')
 @Controller('auth')

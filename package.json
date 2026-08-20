@@ -4,14 +4,14 @@
   "private": true,
   "engines": {
     "node": "24.x",
-    "pnpm": "10.x"
+    "pnpm": "11.x"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.22.0",
   "scripts": {
     "bootstrap": "node scripts/setup.mjs",
     "dev": "turbo run dev --filter=api --filter=web",
-    "dev:api": "pnpm --filter api dev",
-    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter @codelife/contracts build && pnpm --filter api dev",
+    "dev:web": "pnpm --filter @codelife/contracts build && pnpm --filter web dev",
     "db:up": "node scripts/db.mjs up",
     "db:down": "node scripts/db.mjs down",
     "db:status": "node scripts/db.mjs status",
@@ -28,6 +28,6 @@
     "test:web:e2e": "pnpm --filter web test:e2e"
   },
   "devDependencies": {
-    "turbo": "2.9.14"
+    "turbo": "2.10.11"
   }
 }

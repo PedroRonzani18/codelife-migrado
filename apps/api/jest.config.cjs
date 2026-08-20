@@ -2,7 +2,7 @@ module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
   testRegex: '.*\\.spec\\.ts$',
-  transform: { '^.+\\.(t|j)s$': ['ts-jest', { tsconfig: 'tsconfig.json' }] },
+  transform: { '^.+\\.(t|j)s$': ['ts-jest', { tsconfig: 'tsconfig.spec.json' }] },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@codelife/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',

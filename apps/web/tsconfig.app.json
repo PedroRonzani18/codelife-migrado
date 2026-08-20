@@ -7,11 +7,8 @@
     "jsx": "react-jsx",
     "noEmit": true,
     "allowImportingTsExtensions": false,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@codelife/contracts": ["../../packages/contracts/src/index.ts"],
-      "@codelife/contracts/*": ["../../packages/contracts/src/*.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"]

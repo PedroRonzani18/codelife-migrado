@@ -3,11 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "exports": { ".": "./index.mjs" },
+  "exports": {
+    ".": "./index.mjs"
+  },
   "dependencies": {
-    "@eslint/js": "9.32.0",
-    "globals": "15.15.0",
-    "typescript": "5.8.3",
-    "typescript-eslint": "8.38.0"
+    "@eslint/js": "10.0.1",
+    "globals": "17.11.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0"
   }
 }
