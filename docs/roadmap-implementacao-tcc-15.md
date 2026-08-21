@@ -8,7 +8,7 @@
 
 **Data de consolidação:** 20 de agosto de 2026
 
-**Estado deste documento:** planejamento aprovado para implementação futura
+**Estado deste documento:** Macroetapa 1 concluída; Macroetapas 2, 3 e 4 pendentes
 
 **Quantidade fixa de macroetapas:** 4
 
@@ -36,7 +36,7 @@ contracts: schemas Zod e tipos públicos, sem modelos Prisma
 As quatro macroetapas são dependentes e devem ser executadas em ordem:
 
 ```text
-1. Consolidar decisões, contratos e modelo de dados
+1. Consolidar decisões, contratos e modelo de dados ✅ concluída
   → 2. Implementar API, persistência e regras de domínio
     → 3. Implementar a jornada completa no frontend
       → 4. Fechar testes, evidências e validação humana
@@ -955,6 +955,8 @@ registrada. Não avançar com APIs sobre um schema ainda provisório.
 > solicitação explícita.
 
 ### 7.10 Registro de execução
+
+**Status:** concluída em 20 de agosto de 2026.
 
 - Implementação: schema composicional com UUIDs e posições, migration protegida,
   seed determinístico e não destrutivo, assets locais, contratos Zod estritos e
