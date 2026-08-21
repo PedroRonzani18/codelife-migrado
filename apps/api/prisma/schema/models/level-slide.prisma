@@ -1,0 +1,14 @@
+model LevelSlide {
+  id                     String                @id @default(uuid()) @db.Uuid
+  levelId                String                @db.Uuid
+  slideId                String                @db.Uuid
+  position               Int
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  level                  Level                 @relation(fields: [levelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  slide                  Slide                 @relation(fields: [slideId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentByLevelProgress UserLevelProgress[]   @relation("CurrentLevelSlide")
+
+  @@unique([levelId, position])
+  @@index([slideId])
+}

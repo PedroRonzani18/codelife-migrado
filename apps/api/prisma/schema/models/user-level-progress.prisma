@@ -1,0 +1,15 @@
+model UserLevelProgress {
+  id                    String             @id @default(uuid()) @db.Uuid
+  userIslandProgressId  String             @db.Uuid
+  islandLevelId         String             @db.Uuid
+  currentLevelSlideId   String             @db.Uuid
+  completedAt           DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  userIslandProgress    UserIslandProgress @relation(fields: [userIslandProgressId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  islandLevel           IslandLevel        @relation("ProgressIslandLevel", fields: [islandLevelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentLevelSlide     LevelSlide         @relation("CurrentLevelSlide", fields: [currentLevelSlideId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([userIslandProgressId, islandLevelId])
+  @@index([currentLevelSlideId])
+}

@@ -1,0 +1,11 @@
+model Slide {
+  id             String          @id @default(uuid()) @db.Uuid
+  title          String
+  type           SlideType
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  levelPositions LevelSlide[]
+  textText       TextTextSlide?
+  textImage      TextImageSlide?
+  textCode       TextCodeSlide?
+}

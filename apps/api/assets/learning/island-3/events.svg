@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Evento de clique</title>
+  <desc id="desc">Um cursor seleciona um botão identificado como clicar.</desc>
+  <rect width="640" height="360" fill="#f4f7fb"/>
+  <rect x="190" y="126" width="260" height="104" rx="18" fill="#1f4b99"/>
+  <text x="264" y="188" font-family="sans-serif" font-size="32" font-weight="700" fill="#ffffff">Clicar</text>
+  <path d="M468 226l26 72 16-27 26 30 18-16-28-30 30-10z" fill="#183153"/>
+</svg>

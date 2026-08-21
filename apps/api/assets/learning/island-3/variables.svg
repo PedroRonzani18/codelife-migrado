@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Variável JavaScript</title>
+  <desc id="desc">Um cartão mostra uma variável chamada linguagem com o valor JavaScript.</desc>
+  <rect width="640" height="360" fill="#f4f7fb"/>
+  <rect x="92" y="110" width="456" height="140" rx="16" fill="#ffffff" stroke="#1f4b99" stroke-width="4"/>
+  <text x="130" y="168" font-family="monospace" font-size="28" fill="#183153">const linguagem =</text>
+  <text x="172" y="214" font-family="monospace" font-size="30" font-weight="700" fill="#1f4b99">&quot;JavaScript&quot;;</text>
+</svg>

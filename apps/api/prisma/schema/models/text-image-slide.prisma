@@ -1,0 +1,10 @@
+model TextImageSlide {
+  slideId      String     @id @db.Uuid
+  text         String
+  mediaAssetId String     @db.Uuid
+  altText      String
+  slide        Slide      @relation(fields: [slideId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([mediaAssetId])
+}
