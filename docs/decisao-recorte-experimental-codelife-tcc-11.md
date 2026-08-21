@@ -21,8 +21,8 @@ encerramento da implementação.
 ## Decisão executiva
 
 O recorte aprovado é a modernização incremental, por fatia vertical funcional,
-da **trilha pedagógica autenticada com leitura estruturada de conteúdo e
-persistência de progresso por nível**.
+da **trilha pedagógica autenticada com leitura estruturada de conteúdo,
+persistência contextual de localização e conclusão por nível**.
 
 A instância controlada da fatia utilizará a ilha sintética `island-3`
 (`Interatividade`), com os três níveis e os nove slides criados pelo
@@ -36,24 +36,58 @@ A jornada observável da fatia será:
 
 ```text
 pessoa autenticada
-  → abre a ilha experimental
+  → abre a trilha única e a ilha experimental
     → consulta níveis ordenados
-      → percorre slides não bloqueantes do nível
+      → percorre sequencialmente slides não bloqueantes e persiste o cursor atual
         → conclui o nível
-          → recupera o progresso em nova consulta ou sessão
+          → recupera localização e conclusão em nova consulta ou sessão
             → acessa o próximo nível liberado
 ```
 
-A escolha confirma, com redução explícita, a hipótese
-`Ilha → Nível → Slide → Progresso` do card. Ela preserva o núcleo educacional,
-exercita interface, API, autorização, persistência, integridade e testes e evita
-importar para a primeira intervenção as falhas e integrações do editor,
+A escolha confirma, com redução explícita, a hipótese de navegação
+`Ilha → Nível → Slide → Progresso` do card. Sua modelagem física, porém, separa
+conteúdo atômico de posicionamentos na composição. Ela preserva o núcleo
+educacional, exercita interface, API, autorização, persistência, integridade e
+testes e evita importar para a primeira intervenção as falhas e integrações do editor,
 sandbox, quiz, CodeBlock, projetos e módulos sociais.
 
 A decisão não afirma que toda a trilha, todo o CodeLife ou todas as regras de
 progressão foram modernizados. A versão legada permanece a referência para a
 linha de base, e o CodeLife continua sendo o estudo de caso da metodologia
 proposta no TCC.
+
+### Atualização aprovada pelo TCC-15
+
+Em 20 de agosto de 2026, o roadmap do TCC-15 atualizou deliberadamente partes
+desta decisão antes da implementação funcional. Essa atualização é uma decisão
+de recorte aprovada, e não uma descoberta posterior sobre o legado. O legado
+permanece como linha de base; não se deve alegar equivalência estrita para a
+persistência por slide.
+
+Os trechos alterados são: a decisão executiva; a jornada observável; as seções
+1.1 e 1.3; as invariantes e adaptações das seções 3.1 e 3.2; as fronteiras de
+dados e API das seções 4 e 5; os limites de interface da seção 7; os critérios
+de suficiência, a decomposição, os riscos e a conclusão. A atualização:
+
+- mantém a conclusão explícita e terminal por nível, mas a contextualiza no
+  posicionamento `IslandLevel`;
+- adiciona cursor persistido no `LevelSlide` atual, inclusive ao navegar e
+  revisar conteúdo;
+- substitui a hierarquia física direta por
+  `Trail → TrailIsland → Island → IslandLevel → Level → LevelSlide → Slide`;
+- introduz uma trilha singleton explícita e o progresso
+  `UserTrailProgress → UserIslandProgress → UserLevelProgress`;
+- deriva os estados `available`, `in_progress`, `blocked` e `completed` no
+  servidor;
+- exclui maior avanço, histórico de visitas, percentuais e revisão de
+  concorrência; e
+- fixa a política de não invalidar automaticamente o progresso após edição de
+  conteúdo ou estrutura.
+
+O [ADR 0010](adr/0010-modelo-composicional-e-progresso-contextual.md) registra
+o modelo normativo. Onde uma redação histórica deste documento diferir desse
+ADR ou do roadmap TCC-15, prevalecem as decisões de 20 de agosto de 2026
+descritas nesta atualização.
 
 ## Fundamentação da escolha
 
@@ -93,14 +127,18 @@ proposta no TCC.
 
 Inclui-se somente o comportamento necessário para que uma pessoa autenticada:
 
-1. acesse a ilha experimental definida no protocolo;
-2. consulte seus três níveis em ordem determinística;
+1. acesse a trilha singleton e a ilha experimental definida no protocolo;
+2. consulte seus três níveis posicionados em ordem determinística;
 3. acesse o primeiro nível e, depois, cada nível liberado;
-4. percorra os slides não bloqueantes do nível em ordem determinística;
+4. percorra os slides não bloqueantes do nível em ordem determinística e tenha
+   persistido exatamente o posicionamento atual;
 5. conclua explicitamente o nível ao alcançar o fim da sequência;
-6. tenha a conclusão persistida uma única vez;
-7. recupere o mesmo estado após nova consulta ou nova sessão;
-8. possa revisitar níveis concluídos;
+6. tenha a conclusão persistida uma única vez no contexto daquele nível
+   posicionado;
+7. recupere a última localização e as conclusões após nova consulta ou nova
+   sessão;
+8. possa revisitar qualquer slide de níveis concluídos sem rebaixar a
+   conclusão;
 9. tenha o próximo nível liberado somente após a conclusão do anterior.
 
 ### 1.2 Apresentações de slide suportadas
@@ -112,9 +150,9 @@ O contrato contempla os tipos presentes na ilha sintética selecionada:
 - `TextCode`, tratado como conteúdo de leitura, sem execução.
 
 O contrato preserva título, conteúdo necessário à leitura, pertencimento ao
-nível e ordem. Ele não preserva a composição visual em duas colunas, classes
-CSS, uso de `dangerouslySetInnerHTML` ou estrutura interna dos componentes do
-legado.
+nível posicionado e ordem. Ele não preserva a composição visual em duas
+colunas, classes CSS, uso de `dangerouslySetInnerHTML` ou estrutura interna dos
+componentes do legado.
 
 ### 1.3 Dependências fundacionais incluídas
 
@@ -123,9 +161,10 @@ completa:
 
 - identidade autenticada mínima e identificador estável da pessoa;
 - autorização no servidor para leitura e escrita do próprio progresso;
-- representação de ilha, nível, slide e progresso;
+- representação de trilha, ilha, nível, slide, seus posicionamentos e
+  progresso contextual;
 - carga repetível da fixture experimental;
-- rotas ou contratos de leitura da hierarquia e gravação/consulta do progresso;
+- rotas ou contratos de leitura da composição e gravação/consulta do progresso;
 - interface mínima para mapa da ilha, lista de níveis, leitura de slides e
   indicação do progresso;
 - tratamento dos estados de carregamento, ausência de conteúdo, erro e acesso
@@ -142,6 +181,8 @@ Permanecem explicitamente fora da primeira intervenção:
 - conclusão de ilha, desafio final e CodeBlocks;
 - `Quiz`, `InputCode`, `RenderCode`, editor, prévia, execução e sandbox;
 - estado `skipped` e efeito de abrir discussões sobre o progresso;
+- percentual persistido, maior avanço, histórico de visitas, telemetria
+  pedagógica, `revision` e `expectedRevision`;
 - discussões, threads, comentários, likes e denúncias;
 - projetos, colaboração, compartilhamento e screenshots;
 - busca, perfis públicos, ranking, moderação, concurso e pesquisa;
@@ -150,6 +191,8 @@ Permanecem explicitamente fora da primeira intervenção:
 - internacionalização completa, subdomínios PT/EN e migração de todos os
   conteúdos dos dois idiomas;
 - upload e administração de imagens;
+- versionamento formal de conteúdo e invalidação automática de progresso após
+  edição ou reordenação;
 - migração integral do banco legado ou de dados históricos de produção;
 - integração, substituição ou desligamento da aplicação legada em produção;
 - reprodução pixel a pixel e reconstrução integral da identidade visual;
@@ -166,10 +209,10 @@ usada para afirmar que o produto inteiro foi atualizado.
 
 | ID | Contrato no recorte | Origem |
 | --- | --- | --- |
-| R11-IF-01 | Ilha contém níveis e nível contém slides; os vínculos válidos e a ordem devem ser recuperáveis. | IF-01, modelos `islands`, `levels` e `slides`. |
-| R11-IF-02 | A pessoa autenticada pode percorrer em sequência os slides não bloqueantes do nível selecionado. | IF-02 e fluxo revalidado em `Slide.jsx`. |
-| R11-IF-03 | A conclusão explícita do nível deve ser associada à pessoa e recuperável posteriormente. | IF-07 e T07/CF-13. |
-| R11-IF-04 | Um nível concluído pode ser revisitado sem perder o estado registrado. | Finalidade de continuidade da trilha e IF-07. |
+| R11-IF-01 | A composição recupera trilha, ilha, nível e slide em posições ordenadas; conteúdo atômico e posicionamento têm identidade distinta. | IF-01, modelos `islands`, `levels` e `slides`; adaptação de integridade aprovada pelo TCC-15. |
+| R11-IF-02 | A pessoa autenticada pode percorrer em sequência os slides não bloqueantes do nível selecionado, persistindo apenas o cursor atual. | IF-02 e fluxo revalidado em `Slide.jsx`; adaptação deliberada de continuidade. |
+| R11-IF-03 | A conclusão explícita do nível posicionado e sua localização atual devem ser associadas à pessoa no contexto da trilha e recuperáveis posteriormente. | IF-07 e T07/CF-13; adaptação de modelo aprovada pelo TCC-15. |
+| R11-IF-04 | Um nível concluído pode ter qualquer slide revisitado sem perder `completedAt`; a revisão atualiza somente o cursor. | Finalidade de continuidade da trilha e IF-07. |
 | R11-IF-05 | Uma conclusão válida não pode ser rebaixada por atualização posterior incompatível. | IF-08 e proteção existente em `userprogressRoute.js`. |
 
 ### 3.2 Adaptações funcionais deliberadas
@@ -177,9 +220,9 @@ usada para afirmar que o produto inteiro foi atualizado.
 | ID | Decisão | Justificativa e efeito na comparação |
 | --- | --- | --- |
 | R11-A-01 | A escrita de progresso será aceita somente para a pessoa autenticada, para nível existente da ilha experimental e em transição permitida. | Fortalece IF-09 e elimina a aceitação de identificadores/estados livres. É adaptação de robustez, não nova regra pedagógica. |
-| R11-A-02 | A unidade de progresso será exclusivamente o **nível**. Não serão armazenados IDs de ilha no mesmo campo. | Resolve a ambiguidade de `userprogress.level` e permite FK/contrato inequívoco. Conclusão de ilha não integra a comparação. |
-| R11-A-03 | O conjunto inicial de estados da fatia terá apenas `completed`; ausência de registro significa não concluído. | `skipped` possui semântica ambígua e fica fora. A mudança deve ser analisada como adaptação, não como preservação estrita desse estado. |
-| R11-A-04 | Abrir, fechar ou navegar por conteúdo não produzirá efeitos colaterais de progresso; somente a ação de conclusão ao fim do nível poderá persistir `completed`. | Evita o acoplamento entre discussão e `skipped` identificado em IF-10/IF-15. |
+| R11-A-02 | A conclusão continua sendo por nível, mas o progresso é contextual: `UserTrailProgress → UserIslandProgress → UserLevelProgress` referencia `TrailIsland`, `IslandLevel` e `LevelSlide`. | Resolve a ambiguidade de `userprogress.level`, impede vazamento entre composições reutilizadas e não introduz conclusão de ilha ou trilha. |
+| R11-A-03 | Os estados do nível são derivados como `available`, `in_progress`, `blocked` e `completed`; `skipped` não existe. | A ausência de progresso significa não iniciado; um cursor sem `completedAt` significa em andamento. A mudança deve ser analisada como adaptação, não como preservação estrita de estados do legado. |
+| R11-A-04 | Navegar por conteúdo persiste o cursor atual, sem concluir automaticamente o nível. A conclusão só é registrada por ação explícita no último slide. | Separa continuidade de navegação da semântica de conclusão e evita que discussão, abandono ou leitura de conteúdo sejam interpretados como `skipped`. |
 | R11-A-05 | A API validará também a ordem de liberação: o primeiro nível está disponível; os demais exigem conclusão do nível imediatamente anterior. | Torna a regra uniforme em interface, rota e servidor e impede acesso direto incoerente. |
 
 ### 3.3 Decisões para itens anteriormente classificados como revisão
@@ -206,10 +249,10 @@ corrigidas silenciosamente por este recorte.
 | Dependência | Tratamento mínimo | Limite explícito |
 | --- | --- | --- |
 | Identidade | Sessão ou mecanismo equivalente que forneça ID estável; endpoints de progresso protegidos no servidor. | Não inclui cadastro, recuperação de senha, perfil completo ou papéis administrativos. |
-| Conteúdo | Fixture versionada com a ilha `island-3`, seus níveis, slides, vínculos e ordenação. | Não inclui importação de todo o CMS, conteúdo histórico ou edição administrativa. |
-| Persistência | Ilha, nível, slide e progresso com integridade suficiente para os cenários aprovados. | Não inclui schema completo do CodeLife nem migração de dados de produção. |
+| Conteúdo | Fixture versionada com a trilha singleton, `island-3`, níveis, slides atômicos, posicionamentos e ordenação. | Não inclui importação de todo o CMS, conteúdo histórico ou edição administrativa. |
+| Persistência | Composição `Trail → TrailIsland → Island → IslandLevel → Level → LevelSlide → Slide` e progresso contextual com cursor. | Não inclui schema completo do CodeLife, migração de dados de produção, histórico ou maior avanço. |
 | Interface | Entrada da ilha, lista de níveis, leitor/navegação de slides e indicação de concluído/bloqueado. | Não inclui mapa global, identidade visual completa ou telas sociais. |
-| API/lógica | Consulta hierárquica ordenada; consulta e conclusão de progresso; verificação de autorização e pré-requisito. | Não inclui compatibilidade com todas as rotas do backend legado. |
+| API/lógica | Consulta composicional ordenada; comandos de cursor e conclusão; verificação de autorização, pertencimento e pré-requisito. | Não inclui compatibilidade com todas as rotas do backend legado, reset ou protocolo de revisão. |
 | Avaliação | Dados repetíveis, testes funcionais, registro de build/execução e coleta pós-intervenção equivalente no recorte. | Não exige repetir métricas globais sobre bases de tamanho incomparável sem contextualização. |
 
 ### Fonte de verdade, coexistência e retorno
@@ -227,25 +270,37 @@ do experimento.
 
 ## 5. Limites da modernização de dados
 
-A modelagem física pode ser alterada, desde que preserve os conceitos e os
-vínculos usados pela fatia. Para o recorte, espera-se no mínimo:
+A modelagem física adotada para a fatia é a composição do ADR 0010:
 
-- chave estável para pessoa, ilha, nível e slide;
-- relação nível → ilha e slide → nível com integridade referencial;
-- unicidade da ordem do nível dentro da ilha e da ordem do slide dentro do
-  nível, ou validação equivalente que impeça sequência ambígua;
-- relação de progresso entre pessoa e nível;
-- unicidade de progresso por `(pessoa, nível)`;
-- data de conclusão registrada quando aplicável;
-- estado restrito ao contrato aprovado;
-- rejeição de nível inexistente, vínculo inválido e atualização não autorizada.
+```text
+Trail → TrailIsland → Island → IslandLevel → Level → LevelSlide → Slide
+```
 
-É permitido renomear campos, normalizar tabelas, separar DTOs e entidades,
-adotar migrations e reforçar constraints. Não é permitido alterar o sentido de
-ilha, nível, slide ou conclusão sem registrar nova decisão. HTML e demais
-conteúdos da fixture devem ser tratados como dados controlados; a forma segura
-de renderização pode mudar e não está vinculada ao uso de
-`dangerouslySetInnerHTML` do legado.
+Para o recorte, espera-se no mínimo:
+
+- UUID estável para pessoa, entidades atômicas e posicionamentos;
+- trilha singleton explícita, embora sem seletor de trilha na interface;
+- unicidade de posição por `TrailIsland`, `IslandLevel` e `LevelSlide`, com
+  posições positivas e ordem derivada, sem lista ligada persistida;
+- subtipos relacionais coerentes com cada `Slide` e ativos locais controlados
+  para `TextImage`;
+- progresso `UserTrailProgress → UserIslandProgress → UserLevelProgress`,
+  único por pessoa e contexto de composição;
+- cursor para o `LevelSlide` atual e `completedAt` opcional, preservando a
+  conclusão explícita por `IslandLevel`;
+- FKs `RESTRICT` e rejeição de contexto inexistente, vínculo inválido,
+  transição não adjacente, atualização não autorizada ou nível bloqueado;
+- ausência de percentuais, maior avanço, histórico, revisão e rebaixamento
+  automático de conclusão.
+
+É permitido normalizar tabelas, separar DTOs e entidades, adotar migrations e
+reforçar constraints. A migration não migra nem apaga progresso histórico: ela
+deve falhar explicitamente quando encontrar `UserProgress` antigo. Editar um
+`Slide` atualiza o conteúdo que será exibido em revisitas, mas não invalida
+progresso; uma nova exigência de conclusão requer nova composição, nível ou
+trilha. HTML e demais conteúdos da fixture devem ser tratados como dados
+controlados; a forma segura de renderização pode mudar e não está vinculada ao
+uso de `dangerouslySetInnerHTML` do legado.
 
 ## 6. Limites da modernização arquitetural
 
@@ -285,12 +340,15 @@ Devem permanecer reconhecíveis:
 - a relação entre ilha, níveis e slides;
 - a ordem e a finalidade do conteúdo;
 - a ação de avançar/retornar entre slides;
-- a indicação de nível disponível, bloqueado ou concluído;
-- a confirmação de conclusão e a recuperação do progresso.
+- a indicação de nível disponível, em andamento, bloqueado ou concluído;
+- a confirmação de conclusão e a recuperação da última localização e do
+  progresso.
 
 A interface não poderá liberar um nível que o servidor considera bloqueado,
 marcar conclusão por simples carregamento de página ou ocultar falha de
-persistência como sucesso visual.
+persistência como sucesso visual. A URL só poderá mudar para uma nova localização
+depois de o servidor confirmar o cursor; em nível em andamento, saltos não
+adjacentes devem retornar ao cursor confirmado.
 
 ## 8. Critérios de suficiência e parada
 
@@ -301,17 +359,19 @@ identificada:
 1. o ambiente modernizado puder ser instalado, configurado e executado a
    partir de instruções versionadas;
 2. a fixture `island-3` puder ser criada de forma repetível;
-3. os vínculos e a ordem dos três níveis e nove slides forem preservados;
+3. a composição, os vínculos e a ordem dos três níveis e nove posicionamentos
+   de slide forem preservados;
 4. os tipos `TextText`, `TextImage` e `TextCode` da fixture forem apresentados
    sem depender do sandbox;
 5. pessoa não autenticada não puder ler ou alterar o progresso;
-6. o primeiro nível estiver disponível e os seguintes obedecerem à liberação
-   sequencial definida;
+6. o primeiro nível estiver disponível, os seguintes obedecerem à liberação
+   sequencial definida e o estado `in_progress` for derivado do cursor;
 7. acesso direto a nível bloqueado for rejeitado ou redirecionado de modo
    consistente;
-8. a conclusão dos três níveis puder ser persistida e recuperada após nova
-   sessão;
-9. uma conclusão não puder ser duplicada nem rebaixada;
+8. a última localização e a conclusão dos três níveis puderem ser persistidas e
+   recuperadas após nova sessão;
+9. um cursor só aceitar transições válidas, e uma conclusão não puder ser
+   duplicada nem rebaixada;
 10. identificadores inexistentes, vínculos inválidos e alterações de progresso
     de outra pessoa forem rejeitados;
 11. os testes automatizados associados a R11-IF-01--R11-IF-05 e
@@ -349,16 +409,18 @@ porta de avanço explícita.
 
 1. **Caracterizar a fatia no legado:** executar e registrar hierarquia,
    navegação, liberação e progresso da `island-3` em base limpa.
-2. **Fixar contratos e fixture:** versionar dados, estados, payloads, erros e
-   cenários de teste aprovados.
+2. **Fixar decisões, composição, contratos e fixture:** versionar modelo de
+   posicionamentos, progresso contextual, estados, payloads, erros e cenários
+   de teste aprovados.
 3. **Preparar execução e identidade mínima:** ambiente repetível e pessoa de
    teste autenticada, sem ampliar para gestão completa de contas.
-4. **Entregar leitura estruturada:** ilha, níveis e slides ordenados de ponta a
-   ponta, com testes de integridade e apresentação.
+4. **Entregar leitura estruturada:** trilha, ilha, níveis e slides posicionados
+   de ponta a ponta, com testes de integridade e apresentação.
 5. **Entregar navegação e liberação sequencial:** regras uniformes no servidor
    e na interface, incluindo acesso direto.
-6. **Entregar persistência de progresso:** conclusão idempotente, recuperação e
-   proteção contra rebaixamento ou alteração indevida.
+6. **Entregar persistência de progresso:** cursor contextual, conclusão
+   idempotente, recuperação e proteção contra rebaixamento ou alteração
+   indevida.
 7. **Consolidar testes de preservação:** executar os cenários equivalentes
    antes/depois e registrar desvios.
 8. **Repetir a coleta técnica do recorte:** build, testes, análise estática,
@@ -382,6 +444,10 @@ com a jornada funcional.
   `island-3` é uma porta de avanço obrigatória.
 - A exclusão de `skipped`, atividades bloqueantes e conclusão de ilha reduz o
   alcance funcional e precisa permanecer visível na avaliação.
+- O cursor por slide é uma adaptação deliberada e precisa ser distinguido de
+  uma preservação estrita do comportamento legado.
+- A política de não invalidar progresso após edição privilegia estabilidade do
+  recorte; não substitui uma política futura de versionamento de conteúdo.
 - Contagens estruturais de uma fatia nova e do legado inteiro não são
   diretamente comparáveis. Métricas devem usar recorte equivalente ou declarar
   a diferença.
@@ -422,16 +488,18 @@ com a jornada funcional.
 
 ## Conclusão
 
-O recorte experimental fica congelado na trilha autenticada da ilha sintética
-`island-3`, com leitura de três níveis e nove slides não bloqueantes e progresso
-persistido por nível. Essa fatia é pequena o suficiente para permitir
+O recorte experimental fica congelado na trilha autenticada singleton que contém
+a ilha sintética `island-3`, com leitura de três níveis e nove posicionamentos
+de slides não bloqueantes, cursor persistido por slide e conclusão explícita por
+nível. Essa fatia é pequena o suficiente para permitir
 implementação e avaliação dentro do TCC e representativa o suficiente para
 exercitar uma modernização vertical com comportamento, dados, servidor,
 interface e testes.
 
 As ambiguidades do legado não foram promovidas a requisitos: desbloqueio global,
 `skipped`, quiz, validação de código e conclusão de ilha ficam fora da
-comparação ou recebem adaptação explicitamente registrada. A intervenção pode
-ser considerada suficiente quando os contratos e as evidências definidos neste
-documento forem satisfeitos; nenhum módulo adicional é necessário para avançar
-à avaliação.
+comparação ou recebem adaptação explicitamente registrada. O cursor por slide e
+o modelo composicional são adaptações aprovadas, não alegações de equivalência
+estrita com o legado. A intervenção pode ser considerada suficiente quando os
+contratos e as evidências definidos neste documento forem satisfeitos; nenhum
+módulo adicional é necessário para avançar à avaliação.
