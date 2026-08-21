@@ -14,14 +14,14 @@ describe('PrismaIslandsRepository (integration)', () => {
 
   afterAll(async () => moduleRef.close());
 
-  it('loads the seeded island with levels in pedagogical order', async () => {
-    const island = await repository.islandByKey('island-3');
-    expect(island).toEqual(expect.objectContaining({ key: 'island-3' }));
-    expect(island!.levels.map((level) => level.sortOrder)).toEqual([0, 1, 2]);
-    expect(island!.levels.map((level) => level.key)).toEqual([
-      'island-3-l1',
-      'island-3-l2',
-      'island-3-l3',
+  it('loads the seeded island through the singleton trail in deterministic order', async () => {
+    const island = await repository.islandBySlug('island-3');
+    expect(island).toEqual(expect.objectContaining({ slug: 'island-3', position: 1 }));
+    expect(island!.levels.map((level) => level.position)).toEqual([1, 2, 3]);
+    expect(island!.levels.map((level) => level.id)).toEqual([
+      '00000000-0000-4000-8000-000000000601',
+      '00000000-0000-4000-8000-000000000602',
+      '00000000-0000-4000-8000-000000000603',
     ]);
   });
 });

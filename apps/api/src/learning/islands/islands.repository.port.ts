@@ -1,18 +1,19 @@
 export const ISLANDS_REPOSITORY = Symbol('ISLANDS_REPOSITORY');
 
 export interface IslandLevelRecord {
-  key: string;
+  id: string;
   title: string;
-  sortOrder: number;
+  position: number;
 }
 
 export interface IslandWithLevelsRecord {
-  key: string;
+  id: string;
+  slug: string;
   title: string;
-  sortOrder: number;
+  position: number;
   levels: IslandLevelRecord[];
 }
 
 export interface IslandsRepositoryPort {
-  islandByKey(key: string): Promise<IslandWithLevelsRecord | null>;
+  islandBySlug(slug: string): Promise<IslandWithLevelsRecord | null>;
 }

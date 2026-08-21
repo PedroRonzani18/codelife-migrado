@@ -2,15 +2,28 @@ import type { PrismaService } from '../../prisma/prisma.service';
 import { PrismaIslandsRepository } from './prisma-islands.repository';
 
 describe('PrismaIslandsRepository', () => {
-  it('delegates the island query with pedagogical level ordering', async () => {
-    const findUnique = jest.fn().mockResolvedValue(null);
-    const prisma = { island: { findUnique } } as unknown as PrismaService;
+  it('reads an island through its singleton-trail and ordered positioning records', async () => {
+    const findFirst = jest.fn().mockResolvedValue(null);
+    const prisma = { trailIsland: { findFirst } } as unknown as PrismaService;
 
-    await new PrismaIslandsRepository(prisma).islandByKey('island-3');
+    await new PrismaIslandsRepository(prisma).islandBySlug('island-3');
 
-    expect(findUnique).toHaveBeenCalledWith({
-      where: { key: 'island-3' },
-      include: { levels: { orderBy: { sortOrder: 'asc' } } },
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { trail: { slug: 'codelife' }, island: { slug: 'island-3' } },
+      select: {
+        id: true,
+        position: true,
+        island: {
+          select: {
+            slug: true,
+            title: true,
+            levels: {
+              orderBy: { position: 'asc' },
+              select: { id: true, position: true, level: { select: { title: true } } },
+            },
+          },
+        },
+      },
     });
   });
 });
