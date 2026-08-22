@@ -1,7 +1,8 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Req } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { stableKeySchema } from '@codelife/contracts/common';
 import { ZodParsePipe } from '@/common/http/zod-parse.pipe';
+import type { AuthenticatedRequest } from '@/auth/types/authenticated-request';
 import { IslandsService } from './islands.service';
 
 @ApiTags('learning')
@@ -12,7 +13,10 @@ export class IslandsController {
 
   @Get('islands/:islandKey')
   @ApiOperation({ summary: 'Detalha a fixture experimental da ilha' })
-  island(@Param('islandKey', new ZodParsePipe(stableKeySchema)) islandKey: string) {
-    return this.islands.islandDetail(islandKey);
+  island(
+    @Req() request: AuthenticatedRequest,
+    @Param('islandKey', new ZodParsePipe(stableKeySchema)) islandKey: string,
+  ) {
+    return this.islands.islandDetail(request.user.id, islandKey);
   }
 }

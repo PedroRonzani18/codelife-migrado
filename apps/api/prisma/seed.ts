@@ -8,18 +8,11 @@ const fixtureAssetRoot = resolve(__dirname, '../assets');
 
 export const fixtureIds = {
   user: '00000000-0000-4000-8000-000000000001',
-  trail: '00000000-0000-4000-8000-000000000201',
   island: '00000000-0000-4000-8000-000000000301',
-  trailIsland: '00000000-0000-4000-8000-000000000401',
   levels: [
     '00000000-0000-4000-8000-000000000501',
     '00000000-0000-4000-8000-000000000502',
     '00000000-0000-4000-8000-000000000503',
-  ],
-  islandLevels: [
-    '00000000-0000-4000-8000-000000000601',
-    '00000000-0000-4000-8000-000000000602',
-    '00000000-0000-4000-8000-000000000603',
   ],
   slides: [
     '00000000-0000-4000-8000-000000000701',
@@ -31,17 +24,6 @@ export const fixtureIds = {
     '00000000-0000-4000-8000-000000000707',
     '00000000-0000-4000-8000-000000000708',
     '00000000-0000-4000-8000-000000000709',
-  ],
-  levelSlides: [
-    '00000000-0000-4000-8000-000000000801',
-    '00000000-0000-4000-8000-000000000802',
-    '00000000-0000-4000-8000-000000000803',
-    '00000000-0000-4000-8000-000000000804',
-    '00000000-0000-4000-8000-000000000805',
-    '00000000-0000-4000-8000-000000000806',
-    '00000000-0000-4000-8000-000000000807',
-    '00000000-0000-4000-8000-000000000808',
-    '00000000-0000-4000-8000-000000000809',
   ],
   assets: [
     '00000000-0000-4000-8000-000000000901',
@@ -59,7 +41,6 @@ const localAssets = [
 export const islandFixture = {
   slug: 'island-3',
   title: 'Interatividade',
-  trail: { slug: 'codelife', title: 'CodeLife' },
   levels: [
     {
       title: 'Variáveis JS',
@@ -89,42 +70,20 @@ export const islandFixture = {
 } as const;
 
 type FixtureSlide = (typeof islandFixture.levels)[number]['slides'][number];
-
 type FixtureSlideSnapshot = {
   id: string;
   title: string;
   type: SlideType;
+  position: number;
   textText: { primaryText: string; secondaryText: string | null } | null;
   textImage: { text: string; altText: string; mediaAsset: { id: string; objectKey: string; mimeType: string } } | null;
   textCode: { text: string; code: string; language: string } | null;
 };
-
 export type FixtureSnapshot = {
   id: string;
   slug: string;
   title: string;
-  islands: Array<{
-    id: string;
-    position: number;
-    island: {
-      id: string;
-      slug: string;
-      title: string;
-      levels: Array<{
-        id: string;
-        position: number;
-        level: {
-          id: string;
-          title: string;
-          slides: Array<{
-            id: string;
-            position: number;
-            slide: FixtureSlideSnapshot;
-          }>;
-        };
-      }>;
-    };
-  }>;
+  levels: Array<{ id: string; title: string; position: number; slides: FixtureSlideSnapshot[] }>;
 } | null;
 
 function assertFixture(condition: unknown, message: string): asserts condition {
@@ -135,58 +94,39 @@ function assertExactSubtype(slide: FixtureSlideSnapshot, definition: FixtureSlid
   const subtypeCount = [slide.textText, slide.textImage, slide.textCode].filter(Boolean).length;
   assertFixture(subtypeCount === 1, `slide ${slide.id} must have exactly one subtype`);
   assertFixture(slide.type === definition.type, `unexpected type for slide ${slide.id}`);
-
   if (definition.type === SlideType.TextText) {
     assertFixture(slide.textText?.primaryText === definition.primaryText, `unexpected primary text for slide ${slide.id}`);
     assertFixture(slide.textText?.secondaryText === definition.secondaryText, `unexpected secondary text for slide ${slide.id}`);
-    return;
-  }
-
-  if (definition.type === SlideType.TextImage) {
+  } else if (definition.type === SlideType.TextImage) {
     assertFixture(slide.textImage?.text === definition.text, `unexpected text for image slide ${slide.id}`);
     assertFixture(slide.textImage?.altText === definition.altText, `unexpected alt text for image slide ${slide.id}`);
     assertFixture(slide.textImage?.mediaAsset.id === definition.mediaAssetId, `unexpected media asset for slide ${slide.id}`);
-    return;
+  } else {
+    assertFixture(slide.textCode?.text === definition.text, `unexpected text for code slide ${slide.id}`);
+    assertFixture(slide.textCode?.code === definition.code, `unexpected code for slide ${slide.id}`);
+    assertFixture(slide.textCode?.language === definition.language, `unexpected language for slide ${slide.id}`);
   }
-
-  assertFixture(slide.textCode?.text === definition.text, `unexpected text for code slide ${slide.id}`);
-  assertFixture(slide.textCode?.code === definition.code, `unexpected code for slide ${slide.id}`);
-  assertFixture(slide.textCode?.language === definition.language, `unexpected language for slide ${slide.id}`);
 }
 
 export function assertFixtureIntegrity(snapshot: FixtureSnapshot): void {
-  assertFixture(snapshot, `${islandFixture.trail.slug} trail was not found`);
-  assertFixture(snapshot.id === fixtureIds.trail, 'unexpected trail identifier');
-  assertFixture(snapshot.slug === islandFixture.trail.slug, 'unexpected trail slug');
-  assertFixture(snapshot.title === islandFixture.trail.title, 'unexpected trail title');
-  assertFixture(snapshot.islands.length === 1, 'expected exactly one trail island');
-
-  const [trailIsland] = snapshot.islands;
-  assertFixture(trailIsland.id === fixtureIds.trailIsland, 'unexpected trail island identifier');
-  assertFixture(trailIsland.position === 1, 'trail island must be at position 1');
-  assertFixture(trailIsland.island.id === fixtureIds.island, 'unexpected island identifier');
-  assertFixture(trailIsland.island.slug === islandFixture.slug, `expected ${islandFixture.slug}`);
-  assertFixture(trailIsland.island.title === islandFixture.title, `unexpected title for ${islandFixture.slug}`);
-  assertFixture(trailIsland.island.levels.length === islandFixture.levels.length, `expected exactly ${islandFixture.levels.length} positioned levels`);
-
+  assertFixture(snapshot, `${islandFixture.slug} island was not found`);
+  assertFixture(snapshot.id === fixtureIds.island, 'unexpected island identifier');
+  assertFixture(snapshot.slug === islandFixture.slug, `expected ${islandFixture.slug}`);
+  assertFixture(snapshot.title === islandFixture.title, `unexpected title for ${islandFixture.slug}`);
+  assertFixture(snapshot.levels.length === islandFixture.levels.length, `expected exactly ${islandFixture.levels.length} levels`);
   for (const [levelIndex, expectedLevel] of islandFixture.levels.entries()) {
-    const islandLevel = trailIsland.island.levels[levelIndex];
-    assertFixture(islandLevel, `missing level at position ${levelIndex + 1}`);
-    assertFixture(islandLevel.id === fixtureIds.islandLevels[levelIndex], `unexpected island-level identifier at position ${levelIndex + 1}`);
-    assertFixture(islandLevel.position === levelIndex + 1, `unexpected level position ${levelIndex + 1}`);
-    assertFixture(islandLevel.level.id === fixtureIds.levels[levelIndex], `unexpected atomic level identifier at position ${levelIndex + 1}`);
-    assertFixture(islandLevel.level.title === expectedLevel.title, `unexpected title for level ${levelIndex + 1}`);
-    assertFixture(islandLevel.level.slides.length === expectedLevel.slides.length, `expected exactly ${expectedLevel.slides.length} positioned slides at level ${levelIndex + 1}`);
-
+    const level = snapshot.levels[levelIndex];
+    assertFixture(level?.id === fixtureIds.levels[levelIndex], `unexpected level at position ${levelIndex + 1}`);
+    assertFixture(level.position === levelIndex + 1, `unexpected level position ${levelIndex + 1}`);
+    assertFixture(level.title === expectedLevel.title, `unexpected level title ${levelIndex + 1}`);
+    assertFixture(level.slides.length === expectedLevel.slides.length, `unexpected slide count at level ${levelIndex + 1}`);
     for (const [slideIndex, expectedSlide] of expectedLevel.slides.entries()) {
-      const positionedSlide = islandLevel.level.slides[slideIndex];
       const fixtureIndex = levelIndex * expectedLevel.slides.length + slideIndex;
-      assertFixture(positionedSlide, `missing slide at level ${levelIndex + 1}, position ${slideIndex + 1}`);
-      assertFixture(positionedSlide.id === fixtureIds.levelSlides[fixtureIndex], `unexpected level-slide identifier at index ${fixtureIndex}`);
-      assertFixture(positionedSlide.position === slideIndex + 1, `unexpected slide position ${slideIndex + 1}`);
-      assertFixture(positionedSlide.slide.id === fixtureIds.slides[fixtureIndex], `unexpected slide identifier at index ${fixtureIndex}`);
-      assertFixture(positionedSlide.slide.title === expectedSlide.title, `unexpected title for slide ${fixtureIndex + 1}`);
-      assertExactSubtype(positionedSlide.slide, expectedSlide);
+      const slide = level.slides[slideIndex];
+      assertFixture(slide?.id === fixtureIds.slides[fixtureIndex], `unexpected slide at index ${fixtureIndex}`);
+      assertFixture(slide.position === slideIndex + 1, `unexpected slide position ${slideIndex + 1}`);
+      assertFixture(slide.title === expectedSlide.title, `unexpected slide title ${fixtureIndex + 1}`);
+      assertExactSubtype(slide, expectedSlide);
     }
   }
 }
@@ -207,52 +147,21 @@ export async function assertFixtureAssets(): Promise<void> {
 }
 
 async function readFixtureSnapshot(transaction: Prisma.TransactionClient): Promise<FixtureSnapshot> {
-  return transaction.trail.findUnique({
-    where: { slug: islandFixture.trail.slug },
+  return transaction.island.findUnique({
+    where: { slug: islandFixture.slug },
     select: {
-      id: true,
-      slug: true,
-      title: true,
-      islands: {
+      id: true, slug: true, title: true,
+      levels: {
         orderBy: { position: 'asc' },
         select: {
-          id: true,
-          position: true,
-          island: {
+          id: true, title: true, position: true,
+          slides: {
+            orderBy: { position: 'asc' },
             select: {
-              id: true,
-              slug: true,
-              title: true,
-              levels: {
-                orderBy: { position: 'asc' },
-                select: {
-                  id: true,
-                  position: true,
-                  level: {
-                    select: {
-                      id: true,
-                      title: true,
-                      slides: {
-                        orderBy: { position: 'asc' },
-                        select: {
-                          id: true,
-                          position: true,
-                          slide: {
-                            select: {
-                              id: true,
-                              title: true,
-                              type: true,
-                              textText: { select: { primaryText: true, secondaryText: true } },
-                              textImage: { select: { text: true, altText: true, mediaAsset: { select: { id: true, objectKey: true, mimeType: true } } } },
-                              textCode: { select: { text: true, code: true, language: true } },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
+              id: true, title: true, type: true, position: true,
+              textText: { select: { primaryText: true, secondaryText: true } },
+              textImage: { select: { text: true, altText: true, mediaAsset: { select: { id: true, objectKey: true, mimeType: true } } } },
+              textCode: { select: { text: true, code: true, language: true } },
             },
           },
         },
@@ -263,99 +172,32 @@ async function readFixtureSnapshot(transaction: Prisma.TransactionClient): Promi
 
 async function seedSlide(transaction: Prisma.TransactionClient, definition: FixtureSlide, levelId: string, fixtureIndex: number): Promise<void> {
   const slideId = fixtureIds.slides[fixtureIndex];
-  const levelSlideId = fixtureIds.levelSlides[fixtureIndex];
-
+  const position = (fixtureIndex % 3) + 1;
   await transaction.slide.upsert({
     where: { id: slideId },
-    update: { title: definition.title, type: definition.type },
-    create: { id: slideId, title: definition.title, type: definition.type },
+    update: { levelId, title: definition.title, type: definition.type, position },
+    create: { id: slideId, levelId, title: definition.title, type: definition.type, position },
   });
-
-  await transaction.levelSlide.upsert({
-    where: { id: levelSlideId },
-    update: { levelId, slideId, position: (fixtureIndex % 3) + 1 },
-    create: { id: levelSlideId, levelId, slideId, position: (fixtureIndex % 3) + 1 },
-  });
-
   if (definition.type === SlideType.TextText) {
-    await transaction.textTextSlide.upsert({
-      where: { slideId },
-      update: { primaryText: definition.primaryText, secondaryText: definition.secondaryText },
-      create: { slideId, primaryText: definition.primaryText, secondaryText: definition.secondaryText },
-    });
-    return;
+    await transaction.textTextSlide.upsert({ where: { slideId }, update: { primaryText: definition.primaryText, secondaryText: definition.secondaryText }, create: { slideId, primaryText: definition.primaryText, secondaryText: definition.secondaryText } });
+  } else if (definition.type === SlideType.TextImage) {
+    await transaction.textImageSlide.upsert({ where: { slideId }, update: { text: definition.text, mediaAssetId: definition.mediaAssetId, altText: definition.altText }, create: { slideId, text: definition.text, mediaAssetId: definition.mediaAssetId, altText: definition.altText } });
+  } else {
+    await transaction.textCodeSlide.upsert({ where: { slideId }, update: { text: definition.text, code: definition.code, language: definition.language }, create: { slideId, text: definition.text, code: definition.code, language: definition.language } });
   }
-
-  if (definition.type === SlideType.TextImage) {
-    await transaction.textImageSlide.upsert({
-      where: { slideId },
-      update: { text: definition.text, mediaAssetId: definition.mediaAssetId, altText: definition.altText },
-      create: { slideId, text: definition.text, mediaAssetId: definition.mediaAssetId, altText: definition.altText },
-    });
-    return;
-  }
-
-  await transaction.textCodeSlide.upsert({
-    where: { slideId },
-    update: { text: definition.text, code: definition.code, language: definition.language },
-    create: { slideId, text: definition.text, code: definition.code, language: definition.language },
-  });
 }
 
 export async function seedExperimentalFixture(prisma: PrismaClient): Promise<void> {
   await assertFixtureAssets();
   await prisma.$transaction(async (transaction) => {
-    await transaction.user.upsert({
-      where: { key: 'aluna-demo' },
-      update: { username: 'aluna.demo', displayName: 'Aluna Demo' },
-      create: { id: fixtureIds.user, key: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo' },
-    });
-
-    await transaction.trail.upsert({
-      where: { slug: islandFixture.trail.slug },
-      update: { title: islandFixture.trail.title },
-      create: { id: fixtureIds.trail, slug: islandFixture.trail.slug, title: islandFixture.trail.title },
-    });
-
-    for (const asset of localAssets) {
-      await transaction.mediaAsset.upsert({
-        where: { objectKey: asset.objectKey },
-        update: { mimeType: asset.mimeType, width: asset.width, height: asset.height },
-        create: asset,
-      });
-    }
-
-    await transaction.island.upsert({
-      where: { slug: islandFixture.slug },
-      update: { title: islandFixture.title },
-      create: { id: fixtureIds.island, slug: islandFixture.slug, title: islandFixture.title },
-    });
-
-    await transaction.trailIsland.upsert({
-      where: { id: fixtureIds.trailIsland },
-      update: { trailId: fixtureIds.trail, islandId: fixtureIds.island, position: 1 },
-      create: { id: fixtureIds.trailIsland, trailId: fixtureIds.trail, islandId: fixtureIds.island, position: 1 },
-    });
-
+    await transaction.user.upsert({ where: { key: 'aluna-demo' }, update: { username: 'aluna.demo', displayName: 'Aluna Demo' }, create: { id: fixtureIds.user, key: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo' } });
+    for (const asset of localAssets) await transaction.mediaAsset.upsert({ where: { objectKey: asset.objectKey }, update: { mimeType: asset.mimeType, width: asset.width, height: asset.height }, create: asset });
+    await transaction.island.upsert({ where: { slug: islandFixture.slug }, update: { title: islandFixture.title }, create: { id: fixtureIds.island, slug: islandFixture.slug, title: islandFixture.title } });
     for (const [levelIndex, levelDefinition] of islandFixture.levels.entries()) {
       const levelId = fixtureIds.levels[levelIndex];
-      await transaction.level.upsert({
-        where: { id: levelId },
-        update: { title: levelDefinition.title },
-        create: { id: levelId, title: levelDefinition.title },
-      });
-
-      await transaction.islandLevel.upsert({
-        where: { id: fixtureIds.islandLevels[levelIndex] },
-        update: { islandId: fixtureIds.island, levelId, position: levelIndex + 1 },
-        create: { id: fixtureIds.islandLevels[levelIndex], islandId: fixtureIds.island, levelId, position: levelIndex + 1 },
-      });
-
-      for (const [slideIndex, slideDefinition] of levelDefinition.slides.entries()) {
-        await seedSlide(transaction, slideDefinition, levelId, levelIndex * levelDefinition.slides.length + slideIndex);
-      }
+      await transaction.level.upsert({ where: { id: levelId }, update: { islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1 }, create: { id: levelId, islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1 } });
+      for (const [slideIndex, slideDefinition] of levelDefinition.slides.entries()) await seedSlide(transaction, slideDefinition, levelId, levelIndex * levelDefinition.slides.length + slideIndex);
     }
-
     assertFixtureIntegrity(await readFixtureSnapshot(transaction));
   });
 }
@@ -364,13 +206,8 @@ async function runSeed(): Promise<void> {
   if (!process.env.DATABASE_URL) config({ path: '../../.env', quiet: true });
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error('DATABASE_URL is required to seed the experimental fixture');
-
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
-  try {
-    await seedExperimentalFixture(prisma);
-  } finally {
-    await prisma.$disconnect();
-  }
+  try { await seedExperimentalFixture(prisma); } finally { await prisma.$disconnect(); }
 }
 
 if (require.main === module) {

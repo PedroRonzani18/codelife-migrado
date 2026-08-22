@@ -42,6 +42,7 @@ function assertIsolatedTestDatabase(value, database = 'codelife_test') {
 const tcc14FoundationMigration = readFileSync('apps/api/prisma/migrations/20260816000000_tcc14_foundation/migration.sql', 'utf8');
 const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/20260819000000_harden_persistence/migration.sql', 'utf8');
 const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
+const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
 
 const tcc14FixtureSql = `
 INSERT INTO "User" ("id", "key", "username", "displayName", "createdAt", "updatedAt")
@@ -82,33 +83,50 @@ function validateTcc15UpgradeScenarios(env) {
   const upgradeDatabase = 'codelife_upgrade_empty';
   prepareTcc14Database(upgradeDatabase, false);
   psql(upgradeDatabase, tcc15Migration);
+  psql(upgradeDatabase, directHierarchyMigration);
   runPnpm(['--filter', 'api', 'prisma:seed'], { env: { ...env, DATABASE_URL: databaseUrl(upgradeDatabase) } });
-  if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Trail";') !== '1'
-    || scalar(upgradeDatabase, 'SELECT count(*) FROM "IslandLevel";') !== '3'
-    || scalar(upgradeDatabase, 'SELECT count(*) FROM "LevelSlide";') !== '9'
+  if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island";') !== '1'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '3'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '9'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "MediaAsset";') !== '3') {
-    throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 1 × 3 × 9 composition');
+    throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 3 × 9 hierarchy');
   }
   expectPsqlFailure(
     upgradeDatabase,
-    `INSERT INTO "TrailIsland" ("id", "trailId", "islandId", "position") VALUES ('00000000-0000-4000-8000-000000000411', '00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000301', 0);`,
-    'TrailIsland_position_positive',
+    `INSERT INTO "Level" ("id", "islandId", "title", "position") VALUES ('00000000-0000-4000-8000-000000000511', '00000000-0000-4000-8000-000000000301', 'Inválido', 0);`,
+    'Level_position_positive',
   );
   expectPsqlFailure(
     upgradeDatabase,
-    `INSERT INTO "IslandLevel" ("id", "islandId", "levelId", "position") VALUES ('00000000-0000-4000-8000-000000000611', '00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000501', 0);`,
-    'IslandLevel_position_positive',
+    `INSERT INTO "Slide" ("id", "levelId", "title", "position", "type") VALUES ('00000000-0000-4000-8000-000000000711', '00000000-0000-4000-8000-000000000501', 'Inválido', 0, 'TextText');`,
+    'Slide_position_positive',
   );
   expectPsqlFailure(
     upgradeDatabase,
-    `INSERT INTO "LevelSlide" ("id", "levelId", "slideId", "position") VALUES ('00000000-0000-4000-8000-000000000811', '00000000-0000-4000-8000-000000000501', '00000000-0000-4000-8000-000000000701', 0);`,
-    'LevelSlide_position_positive',
+    `INSERT INTO "Level" ("id", "islandId", "title", "position") VALUES ('00000000-0000-4000-8000-000000000512', '00000000-0000-4000-8000-000000000301', 'Duplicado', 1);`,
+    'Level_islandId_position_key',
   );
+
+  const compositionalProgressDatabase = 'codelife_upgrade_compositional_progress';
+  prepareTcc14Database(compositionalProgressDatabase, false);
+  psql(compositionalProgressDatabase, tcc15Migration);
+  psql(compositionalProgressDatabase, `
+    INSERT INTO "UserTrailProgress" ("id", "userId", "trailId", "currentTrailIslandId")
+    VALUES (
+      '00000000-0000-4000-8000-000000001001',
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000401'
+    );
+  `);
   expectPsqlFailure(
-    upgradeDatabase,
-    `INSERT INTO "TrailIsland" ("id", "trailId", "islandId", "position") VALUES ('00000000-0000-4000-8000-000000000412', '00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000301', 1);`,
-    'TrailIsland_trailId_position_key',
+    compositionalProgressDatabase,
+    directHierarchyMigration,
+    'compositional progress contains records',
   );
+  if (scalar(compositionalProgressDatabase, 'SELECT count(*) FROM "UserTrailProgress";') !== '1') {
+    throw new Error('Blocked hierarchy simplification modified compositional progress');
+  }
 
   const blockedDatabase = 'codelife_upgrade_with_progress';
   prepareTcc14Database(blockedDatabase, true);

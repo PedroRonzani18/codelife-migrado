@@ -1,15 +1,16 @@
 model UserIslandProgress {
-  id                   String             @id @default(uuid()) @db.Uuid
-  userTrailProgressId  String             @db.Uuid
-  trailIslandId        String             @db.Uuid
-  currentIslandLevelId String             @db.Uuid
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  userTrailProgress    UserTrailProgress  @relation(fields: [userTrailProgressId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  trailIsland          TrailIsland        @relation("ProgressTrailIsland", fields: [trailIslandId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  currentIslandLevel   IslandLevel        @relation("CurrentIslandLevel", fields: [currentIslandLevelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  levels               UserLevelProgress[]
+  id             String              @id @default(uuid()) @db.Uuid
+  userId         String              @db.Uuid
+  islandId       String              @db.Uuid
+  currentLevelId String              @db.Uuid
+  startedAt      DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  island         Island              @relation(fields: [islandId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  currentLevel   Level               @relation("CurrentLevel", fields: [currentLevelId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  levels         UserLevelProgress[]
 
-  @@unique([userTrailProgressId, trailIslandId])
-  @@index([currentIslandLevelId])
+  @@unique([userId, islandId])
+  @@index([currentLevelId])
 }
