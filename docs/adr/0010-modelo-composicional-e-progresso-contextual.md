@@ -1,6 +1,6 @@
 # ADR 0010 — Modelo composicional e progresso contextual
 
-**Status.** Aceito em 20 de agosto de 2026.
+**Status.** Substituído pelo [ADR 0011 — Hierarquia direta e progresso por ilha e nível](0011-hierarquia-direta-e-progresso-por-ilha-e-nivel.md), em 21 de agosto de 2026.
 
 **Substitui.** ADR 0003 — Modelo de dados direto da fundação.
 

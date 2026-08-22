@@ -45,8 +45,8 @@ pessoa autenticada
 ```
 
 A escolha confirma, com redução explícita, a hipótese de navegação
-`Ilha → Nível → Slide → Progresso` do card. Sua modelagem física, porém, separa
-conteúdo atômico de posicionamentos na composição. Ela preserva o núcleo
+`Ilha → Nível → Slide → Progresso` do card. Sua modelagem física vigente usa
+essa mesma hierarquia direta. Ela preserva o núcleo
 educacional, exercita interface, API, autorização, persistência, integridade e
 testes e evita importar para a primeira intervenção as falhas e integrações do editor,
 sandbox, quiz, CodeBlock, projetos e módulos sociais.
@@ -56,38 +56,28 @@ progressão foram modernizados. A versão legada permanece a referência para a
 linha de base, e o CodeLife continua sendo o estudo de caso da metodologia
 proposta no TCC.
 
-### Atualização aprovada pelo TCC-15
+### Atualização arquitetural aprovada pelo TCC-15
 
-Em 20 de agosto de 2026, o roadmap do TCC-15 atualizou deliberadamente partes
-desta decisão antes da implementação funcional. Essa atualização é uma decisão
-de recorte aprovada, e não uma descoberta posterior sobre o legado. O legado
-permanece como linha de base; não se deve alegar equivalência estrita para a
-persistência por slide.
+Em 21 de agosto de 2026, após observar a implementação da Macroetapa 2, o
+TCC-15 substituiu o desenho composicional intermediário por uma hierarquia
+direta proporcional ao recorte. A mudança mantém a jornada e as adaptações
+funcionais aprovadas, mas remove abstrações de reutilização que não possuem caso
+de uso no experimento:
 
-Os trechos alterados são: a decisão executiva; a jornada observável; as seções
-1.1 e 1.3; as invariantes e adaptações das seções 3.1 e 3.2; as fronteiras de
-dados e API das seções 4 e 5; os limites de interface da seção 7; os critérios
-de suficiência, a decomposição, os riscos e a conclusão. A atualização:
+- conteúdo: `Island → Level → Slide`;
+- progresso: `UserIslandProgress → UserLevelProgress`;
+- início do nível explícito, idempotente e separado da navegação;
+- cursor persistido no `Slide` atual;
+- conclusão explícita e terminal por `Level`;
+- estados `available`, `in_progress`, `blocked` e `completed` derivados;
+- exclusão de trilha persistida, tabelas de posicionamento, maior avanço,
+  histórico, percentuais e CRUD administrativo.
 
-- mantém a conclusão explícita e terminal por nível, mas a contextualiza no
-  posicionamento `IslandLevel`;
-- adiciona cursor persistido no `LevelSlide` atual, inclusive ao navegar e
-  revisar conteúdo;
-- substitui a hierarquia física direta por
-  `Trail → TrailIsland → Island → IslandLevel → Level → LevelSlide → Slide`;
-- introduz uma trilha singleton explícita e o progresso
-  `UserTrailProgress → UserIslandProgress → UserLevelProgress`;
-- deriva os estados `available`, `in_progress`, `blocked` e `completed` no
-  servidor;
-- exclui maior avanço, histórico de visitas, percentuais e revisão de
-  concorrência; e
-- fixa a política de não invalidar automaticamente o progresso após edição de
-  conteúdo ou estrutura.
-
-O [ADR 0010](adr/0010-modelo-composicional-e-progresso-contextual.md) registra
-o modelo normativo. Onde uma redação histórica deste documento diferir desse
-ADR ou do roadmap TCC-15, prevalecem as decisões de 20 de agosto de 2026
-descritas nesta atualização.
+O [ADR 0011](adr/0011-hierarquia-direta-e-progresso-por-ilha-e-nivel.md) e o
+roadmap TCC-15 registram o modelo normativo. As referências a `Trail`,
+`TrailIsland`, `IslandLevel`, `LevelSlide` e progresso composicional no restante
+deste documento são preservadas apenas como histórico da decisão intermediária
+de 20 de agosto e não orientam a implementação vigente.
 
 ## Fundamentação da escolha
 
