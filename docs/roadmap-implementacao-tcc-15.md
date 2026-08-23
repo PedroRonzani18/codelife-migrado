@@ -4,7 +4,7 @@
 
 **Card:** TCC-15
 
-**Estado:** Macroetapas 1, 2 e 3 concluídas; próxima execução começa na Macroetapa 4
+**Estado:** validação automatizada concluída em 23 de agosto de 2026; aguarda roteiro humano final
 
 **Última revisão arquitetural:** 22 de agosto de 2026
 **Decisão vigente:** [ADR 0011 — Hierarquia direta e progresso por ilha e nível](adr/0011-hierarquia-direta-e-progresso-por-ilha-e-nivel.md)
@@ -301,29 +301,29 @@ após novo login, retoma o estado correto.
 
 ## 7. Macroetapa 4 — Validação, evidências e fechamento
 
-**Estado:** pendente.
+**Estado:** validação automatizada concluída em ambiente limpo em 23 de agosto de 2026; aguarda roteiro humano final.
 
 ### Tarefas
 
-1. Manter banco isolado e limpeza determinística nas suítes.
-2. Criar E2E da jornada completa e da retomada.
-3. Executar `pnpm verify` em ambiente limpo.
-4. Registrar matriz requisito → implementação → teste → evidência.
-5. Atualizar OpenAPI e documentação técnica.
-6. Capturar evidências visuais desktop e mobile.
-7. Executar roteiro humano de até dez minutos.
-8. Registrar riscos residuais e diferenças em relação ao legado.
+1. [x] Manter banco isolado e limpeza determinística nas suítes.
+2. [x] Criar E2E da jornada completa e da retomada.
+3. [x] Executar `pnpm verify` em ambiente limpo.
+4. [x] Registrar matriz requisito → implementação → teste → evidência.
+5. [x] Atualizar OpenAPI e documentação técnica.
+6. [x] Capturar evidências visuais desktop e mobile.
+7. [ ] Executar roteiro de inspeção humana de até dez minutos.
+8. [x] Registrar riscos residuais e diferenças em relação ao legado.
 
 ### Critérios finais
 
-- [ ] instalação, migration e seed funcionam em base limpa;
-- [ ] upgrade protegido desde TCC-14 funciona;
-- [ ] login, logout e proteção de origem permanecem válidos;
-- [ ] jornada completa funciona no navegador;
-- [ ] retomada funciona após nova sessão;
-- [ ] acessibilidade básica e responsividade foram verificadas;
-- [ ] testes unitários, integração e E2E passam;
-- [ ] documentação e evidências correspondem ao comportamento executado.
+- [x] instalação, migration e seed funcionam em base limpa;
+- [x] upgrade protegido desde TCC-14 funciona;
+- [x] login, logout e proteção de origem permanecem válidos;
+- [x] jornada completa funciona no navegador;
+- [x] retomada funciona após nova sessão;
+- [x] acessibilidade básica e responsividade foram verificadas;
+- [x] testes unitários, integração e E2E passam;
+- [x] documentação e evidências correspondem ao comportamento executado.
 
 ## 8. Dependências
 
