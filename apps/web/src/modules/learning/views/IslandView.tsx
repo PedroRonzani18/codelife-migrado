@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { stableKeySchema } from '@codelife/contracts/common';
 import { ApiClientError, domainErrorMessage } from '@/shared/http';
-import { FeedbackAlert, LoadingState, RouteErrorState } from '@/shared/components';
+import { FeedbackAlert, LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
 import { IslandJourneyPath } from '../components/IslandJourneyPath';
 import { selectIslandJourney } from '../selectors/selectLearning';
 import { useIslandQuery, useProgressSnapshotQuery } from '../hooks/useLearningQueries';
@@ -18,12 +18,12 @@ export default function IslandView() {
   const start = useStartLevelMutation();
   const [startError, setStartError] = useState<ApiClientError | null>(null);
 
-  if (!parsedSlug.success) return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Endereço inválido" description="A ilha informada não possui um identificador válido." /></main>;
-  if (island.isLoading || snapshot.isLoading) return <main className="mx-auto max-w-6xl px-5"><LoadingState label="Carregando sua jornada…" cards={3} /></main>;
+  if (!parsedSlug.success) return <PageContainer><RouteErrorState title="Endereço inválido" description="A ilha informada não possui um identificador válido." /></PageContainer>;
+  if (island.isLoading || snapshot.isLoading) return <PageContainer><LoadingState label="Carregando sua jornada…" cards={3} /></PageContainer>;
   const queryError = island.error ?? snapshot.error;
   if (queryError) {
     const error = queryError instanceof ApiClientError ? queryError : undefined;
-    return <main className="mx-auto max-w-6xl px-5"><RouteErrorState description={error ? domainErrorMessage(error.code) : 'Não foi possível carregar a jornada.'} requestId={error?.requestId} onRetry={() => { void island.refetch(); void snapshot.refetch(); }} /></main>;
+    return <PageContainer><RouteErrorState description={error ? domainErrorMessage(error.code) : 'Não foi possível carregar a jornada.'} requestId={error?.requestId} onRetry={() => { void island.refetch(); void snapshot.refetch(); }} /></PageContainer>;
   }
 
   const levels = selectIslandJourney(island.data, snapshot.data);
@@ -45,9 +45,9 @@ export default function IslandView() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-10 sm:py-14">
+    <PageContainer className="py-10 sm:py-14">
       <IslandJourneyPath title={island.data?.title ?? 'Interatividade'} levels={levels} isPending={start.isPending} onOpenLevel={openLevel} />
       {startError && <FeedbackAlert className="mt-5" kind="error" title="Não foi possível iniciar o nível" description={domainErrorMessage(startError.code)} requestId={startError.requestId} />}
-    </main>
+    </PageContainer>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ApiClientError, domainErrorMessage } from '@/shared/http';
-import { FeedbackAlert, LoadingState, RouteErrorState } from '@/shared/components';
+import { FeedbackAlert, LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
 import { SlideNavigation } from '../components/SlideNavigation';
 import { SlideRenderer } from '../components/slide-renderers/SlideRenderer';
 import { useLevelQuery, useProgressSnapshotQuery } from '../hooks/useLearningQueries';
@@ -117,26 +117,26 @@ export default function LevelReaderView() {
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, [displayedSlide, isCommandPending, persistAndOpen]);
 
-  if (!slugResult.success || !levelResult.success || !slideResult.success) return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Endereço inválido" description="O nível ou slide informado não possui um identificador válido." /></main>;
-  if (snapshot.isLoading) return <main className="mx-auto max-w-6xl px-5"><LoadingState label="Recuperando seu progresso…" /></main>;
+  if (!slugResult.success || !levelResult.success || !slideResult.success) return <PageContainer><RouteErrorState title="Endereço inválido" description="O nível ou slide informado não possui um identificador válido." /></PageContainer>;
+  if (snapshot.isLoading) return <PageContainer><LoadingState label="Recuperando seu progresso…" /></PageContainer>;
   if (snapshot.error) {
     const error = errorData(snapshot.error);
-    return <main className="mx-auto max-w-6xl px-5"><RouteErrorState {...error} onRetry={() => void snapshot.refetch()} /></main>;
+    return <PageContainer><RouteErrorState {...error} onRetry={() => void snapshot.refetch()} /></PageContainer>;
   }
-  if (!progressLevel) return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Nível não encontrado" description="Este nível não pertence à jornada experimental." /></main>;
-  if (progressLevel.availability === 'blocked') return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Nível bloqueado" description="Conclua o nível anterior antes de continuar." /></main>;
+  if (!progressLevel) return <PageContainer><RouteErrorState title="Nível não encontrado" description="Este nível não pertence à jornada experimental." /></PageContainer>;
+  if (progressLevel.availability === 'blocked') return <PageContainer><RouteErrorState title="Nível bloqueado" description="Conclua o nível anterior antes de continuar." /></PageContainer>;
   if (!progressLevel.progress) {
     if (commandError) {
-      return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Não foi possível iniciar o nível" description={domainErrorMessage(commandError.code)} requestId={commandError.requestId} onRetry={() => { lastStartAttempt.current = null; start.reset(); setCommandError(null); }} /></main>;
+      return <PageContainer><RouteErrorState title="Não foi possível iniciar o nível" description={domainErrorMessage(commandError.code)} requestId={commandError.requestId} onRetry={() => { lastStartAttempt.current = null; start.reset(); setCommandError(null); }} /></PageContainer>;
     }
-    return <main className="mx-auto max-w-6xl px-5"><LoadingState label="Abrindo o nível…" /></main>;
+    return <PageContainer><LoadingState label="Abrindo o nível…" /></PageContainer>;
   }
-  if (level.isLoading) return <main className="mx-auto max-w-6xl px-5"><LoadingState label="Carregando o nível…" /></main>;
+  if (level.isLoading) return <PageContainer><LoadingState label="Carregando o nível…" /></PageContainer>;
   if (level.error) {
     const error = errorData(level.error);
-    return <main className="mx-auto max-w-6xl px-5"><RouteErrorState {...error} onRetry={() => void level.refetch()} /></main>;
+    return <PageContainer><RouteErrorState {...error} onRetry={() => void level.refetch()} /></PageContainer>;
   }
-  if (!displayedSlide || !level.data) return <main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Slide não encontrado" description="O cursor salvo não corresponde ao conteúdo deste nível." /></main>;
+  if (!displayedSlide || !level.data) return <PageContainer><RouteErrorState title="Slide não encontrado" description="O cursor salvo não corresponde ao conteúdo deste nível." /></PageContainer>;
 
   const isCompleted = progressLevel.availability === 'completed' || Boolean(progressLevel.progress.completedAt);
   const canComplete = !displayedSlide.nextSlideId && !isCompleted;
@@ -168,7 +168,7 @@ export default function LevelReaderView() {
     : undefined;
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:py-12">
+    <PageContainer width="reader" className="py-8 sm:py-12">
       <Button asChild variant="ghost" size="sm" className="mb-6">
         <Link to={`/ilhas/${slug}`}><ArrowLeft aria-hidden="true" /> Voltar à ilha</Link>
       </Button>
@@ -206,6 +206,6 @@ export default function LevelReaderView() {
           />
         </CardContent>
       </Card>
-    </main>
+    </PageContainer>
   );
 }

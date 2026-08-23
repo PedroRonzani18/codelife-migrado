@@ -1,12 +1,12 @@
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FeedbackAlert } from '@/shared/components';
+import { FeedbackAlert, PageContainer } from '@/shared/components';
 
 type Props = { onLogin: () => void; isPending: boolean; error?: string; requestId?: string };
 export function ExperimentalLogin({ onLogin, isPending, error, requestId }: Props) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-5 py-12">
+    <PageContainer width="reader" className="flex min-h-screen items-center py-12">
       <div className="grid w-full gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
         <header className="space-y-5">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">CodeLife · recorte TCC</p>
@@ -32,6 +32,6 @@ export function ExperimentalLogin({ onLogin, isPending, error, requestId }: Prop
           </CardContent>
         </Card>
       </div>
-    </main>
+    </PageContainer>
   );
 }

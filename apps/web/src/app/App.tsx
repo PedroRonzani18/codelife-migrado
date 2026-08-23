@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from 'rea
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryClient } from '@/shared/query';
 import { ApiClientError, domainErrorMessage } from '@/shared/http';
-import { LoadingState, RouteErrorState } from '@/shared/components';
+import { LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
 import { ExperimentalLogin } from '@/features/auth/ExperimentalLogin';
 import { SessionHeader } from '@/features/auth/components/SessionHeader';
 import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
@@ -15,12 +15,12 @@ function RootRoute() {
   const session = useSessionQuery();
   const { login } = useSessionMutations();
   const unauthorized = session.error instanceof ApiClientError && session.error.status === 401;
-  if (session.isLoading) return <main className="mx-auto max-w-6xl px-5"><LoadingState label="Verificando sessão…" /></main>;
+  if (session.isLoading) return <PageContainer><LoadingState label="Verificando sessão…" /></PageContainer>;
   if (session.data) return <Navigate to="/ilhas/island-3" replace />;
   if (unauthorized) {
     return <ExperimentalLogin onLogin={() => login.mutate()} isPending={login.isPending} error={login.error instanceof ApiClientError ? domainErrorMessage(login.error.code) : login.error?.message} requestId={login.error instanceof ApiClientError ? login.error.requestId : undefined} />;
   }
-  if (session.error) return <main className="mx-auto max-w-6xl px-5"><RouteErrorState description="Não foi possível verificar a sessão." onRetry={() => void session.refetch()} /></main>;
+  if (session.error) return <PageContainer><RouteErrorState description="Não foi possível verificar a sessão." onRetry={() => void session.refetch()} /></PageContainer>;
   return null;
 }
 
@@ -51,7 +51,7 @@ export function AppRoutes() {
           <Route path="/ilhas/:islandSlug/niveis/:levelId/slides/:slideId" element={<LevelReaderView />} />
         </Route>
       </Route>
-      <Route path="*" element={<main className="mx-auto max-w-6xl px-5"><RouteErrorState title="Página não encontrada" description="O endereço solicitado não pertence à jornada experimental." /></main>} />
+      <Route path="*" element={<PageContainer><RouteErrorState title="Página não encontrada" description="O endereço solicitado não pertence à jornada experimental." /></PageContainer>} />
     </Routes>
   );
 }
