@@ -1,10 +1,14 @@
-# CodeLife migrado — fundação experimental
+# CodeLife migrado — jornada experimental
 
-Implementação controlada da fundação do recorte experimental `island-3` do
-CodeLife. Esta base é deliberadamente limitada: prepara o monorepo, os
-contratos, a fixture e a identidade experimental para a jornada vertical do
-card TCC-15. Ela não moderniza o produto inteiro nem implementa liberação e
-conclusão da trilha.
+Implementação controlada do recorte experimental `island-3` do CodeLife. A
+base entrega uma jornada autenticada com três níveis, nove slides, progresso
+persistido por nível, bloqueio sequencial, retomada e conclusão explícita. Ela
+não moderniza o produto inteiro, não oferece CMS e não representa validação
+universal da metodologia do TCC.
+
+O estado e os limites da implementação estão registrados no
+[roadmap do TCC-15](docs/roadmap-implementacao-tcc-15.md), nos [ADRs](docs/adr)
+e nas [evidências técnicas](docs/evidence/tcc-15-validation.md).
 
 ## Pré-requisitos
 

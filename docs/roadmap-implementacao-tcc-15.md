@@ -296,6 +296,17 @@ com cobertura global acima do gate do repositório.
 - [x] erro de comando mantém o último slide confirmado;
 - [x] jornada completa, retomada após nova sessão e mídia autenticada.
 
+### Clarificações de interação aprovadas após a implementação inicial
+
+- A ação de iniciar continua explícita na visão da ilha, mas, após a escolha,
+  o comando é executado silenciosamente; não há modal de confirmação sobre o
+  salvamento do progresso.
+- Ao concluir um nível que possui sucessor, a ação principal oferece ir
+  diretamente ao próximo nível. No último nível, a ação principal é finalizar
+  a ilha e retornar à visão consolidada.
+- Falhas de persistência permanecem explícitas e recuperáveis. Essas
+  clarificações não alteram os comandos, contratos ou regras de conclusão.
+
 Critério de encerramento: uma pessoa conclui os três níveis pelo navegador e,
 após novo login, retoma o estado correto.
 
