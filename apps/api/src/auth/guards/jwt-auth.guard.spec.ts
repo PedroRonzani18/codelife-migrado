@@ -1,7 +1,7 @@
 import { UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Reflector } from '@nestjs/core';
-import type { AuthService } from '../auth.service';
+import type { AuthService } from '../service/auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 function contextFor(cookies: Record<string, string> = {}) {

@@ -3,13 +3,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import type { StringValue } from 'ms';
-import { AuthController } from './auth.controller';
-import { AUTH_REPOSITORY } from './auth.repository.port';
-import { AuthService } from './auth.service';
+import { AuthController } from './controller/auth.controller';
+import { AUTH_PROVIDER_KEYS } from './constants';
+import { AuthService } from './service/auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { ExperimentalLoginThrottleGuard } from './guards/experimental-login-throttle.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { PrismaAuthRepository } from './prisma-auth.repository';
+import { ClearSessionCookieInterceptor, SetSessionCookieInterceptor } from './interceptors/session-cookie.interceptor';
+import { PrismaAuthRepository } from './repository/prisma-auth.repository';
 
 @Module({
   imports: [
@@ -34,9 +35,12 @@ import { PrismaAuthRepository } from './prisma-auth.repository';
   ],
   controllers: [AuthController],
   providers: [
-    { provide: AUTH_REPOSITORY, useClass: PrismaAuthRepository },
+    { provide: AUTH_PROVIDER_KEYS.AUTH_REPOSITORY, useClass: PrismaAuthRepository },
     AuthService,
+    { provide: AUTH_PROVIDER_KEYS.AUTH_SERVICE, useExisting: AuthService },
     ExperimentalLoginThrottleGuard,
+    SetSessionCookieInterceptor,
+    ClearSessionCookieInterceptor,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: CsrfOriginGuard },
   ],

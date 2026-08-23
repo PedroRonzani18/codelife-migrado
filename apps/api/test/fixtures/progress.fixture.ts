@@ -1,5 +1,5 @@
 import { fixtureIds, islandFixture } from '../../prisma/seed';
-import type { JourneyIslandProgressRecord, ProgressJourneyRecord } from '../../src/learning/progress/repository/progress.repository.port';
+import type { JourneyIslandProgressRecord, ProgressJourneyRecord } from '../../src/learning/repository/progress/progress.repository.interface';
 
 export const progressRecordIds = {
   island: '00000000-0000-4000-8000-000000001002',
