@@ -14,13 +14,24 @@ import { PrismaService } from '../src/prisma/prisma.service';
 describe('experimental foundation (integration)', () => {
   let app: INestApplication;
 
+  async function clearFixtureProgress() {
+    const prisma = app.get(PrismaService);
+    await prisma.userLevelProgress.deleteMany({ where: { userIslandProgress: { userId: fixtureIds.user } } });
+    await prisma.userIslandProgress.deleteMany({ where: { userId: fixtureIds.user } });
+  }
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(module.createNestApplication());
     await app.init();
   });
 
-  afterAll(async () => { await app.close(); });
+  afterAll(async () => {
+    await clearFixtureProgress();
+    await app.close();
+  });
+
+  beforeEach(clearFixtureProgress);
 
   it('keeps the 1 × 3 × 9 hierarchy and differentiates an absent session', async () => {
     await request(app.getHttpServer()).get('/health/live').expect(200, { status: 'ok' });

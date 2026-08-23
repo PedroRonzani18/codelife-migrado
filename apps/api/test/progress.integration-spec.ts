@@ -16,6 +16,8 @@ const users = {
   second: '00000000-0000-4000-8000-000000001102',
 } as const;
 
+const testUserKeys = ['phase2-user-a', 'phase2-user-b'];
+
 describe('authenticated learning progress (integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -40,6 +42,18 @@ describe('authenticated learning progress (integration)', () => {
     await prisma.userIslandProgress.deleteMany({ where: { userId: { in: Object.values(users) } } });
   }
 
+  async function clearStaleTestUsers() {
+    const staleUsers = await prisma.user.findMany({
+      where: { key: { in: testUserKeys } },
+      select: { id: true },
+    });
+    const staleUserIds = staleUsers.map((user) => user.id);
+    if (staleUserIds.length === 0) return;
+    await prisma.userLevelProgress.deleteMany({ where: { userIslandProgress: { userId: { in: staleUserIds } } } });
+    await prisma.userIslandProgress.deleteMany({ where: { userId: { in: staleUserIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: staleUserIds } } });
+  }
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = configureApp(module.createNestApplication());
@@ -49,6 +63,7 @@ describe('authenticated learning progress (integration)', () => {
     const config = app.get(ConfigService);
     origin = config.getOrThrow('webOrigin');
     cookieName = config.getOrThrow('cookieName');
+    await clearStaleTestUsers();
     await prisma.user.upsert({ where: { id: users.first }, update: {}, create: { id: users.first, key: 'phase2-user-a', username: 'phase2.user.a', displayName: 'Phase 2 User A' } });
     await prisma.user.upsert({ where: { id: users.second }, update: {}, create: { id: users.second, key: 'phase2-user-b', username: 'phase2.user.b', displayName: 'Phase 2 User B' } });
   });
