@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 const blockedLevelUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000502/slides/00000000-0000-4000-8000-000000000704';
+const firstLevelSecondSlideUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000501/slides/00000000-0000-4000-8000-000000000702';
+
+async function captureEvidence(page: import('@playwright/test').Page, testInfo: import('@playwright/test').TestInfo, name: string) {
+  const path = testInfo.outputPath(`${name}.png`);
+  await page.screenshot({ path, fullPage: true });
+  await testInfo.attach(name, { path, contentType: 'image/png' });
+}
 
 async function finishLevel(page: import('@playwright/test').Page, expectedSlides: [string, string, string], imageAlt: string) {
   await page.getByRole('button', { name: 'Começar etapa' }).click();
@@ -17,10 +24,11 @@ async function finishLevel(page: import('@playwright/test').Page, expectedSlides
   await page.getByRole('link', { name: 'Voltar à ilha' }).click();
 }
 
-test('completes, unlocks, reviews and resumes the controlled journey', async ({ page }) => {
+test('completes, unlocks, reviews and resumes the controlled journey', async ({ page }, testInfo) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Aprenda interatividade passo a passo.' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Iniciar sessão experimental' })).toBeVisible();
+  await captureEvidence(page, testInfo, 'tcc-15-login-desktop');
   await page.getByRole('button', { name: 'Iniciar sessão experimental' }).click();
   await expect(page.getByRole('heading', { name: 'Interatividade' })).toBeVisible();
   await expect.poll(async () => (await page.context().cookies()).some((cookie) => cookie.name === 'codelife_experimental_session')).toBe(true);
@@ -29,7 +37,29 @@ test('completes, unlocks, reviews and resumes the controlled journey', async ({ 
   await expect(page.getByRole('alert')).toContainText('Nível bloqueado');
   await page.goto('/ilhas/island-3');
 
-  await finishLevel(page, ['Variáveis', 'Declarando valores', 'Valores na página'], 'Representação de uma variável JavaScript com o valor JavaScript.');
+  await page.getByRole('button', { name: 'Começar etapa' }).click();
+  await expect(page.getByRole('heading', { name: 'Variáveis' })).toBeVisible();
+  await page.getByRole('button', { name: 'Próximo' }).press('Enter');
+  await expect(page.getByRole('heading', { name: 'Declarando valores' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sair' }).click();
+  await expect(page.getByRole('button', { name: 'Iniciar sessão experimental' })).toBeVisible();
+  await page.getByRole('button', { name: 'Iniciar sessão experimental' }).click();
+  await page.goto(firstLevelSecondSlideUrl);
+  await expect(page.getByRole('heading', { name: 'Declarando valores' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Próximo' }).click();
+  await expect(page.getByRole('heading', { name: 'Valores na página' })).toBeVisible();
+  const firstLevelImage = page.getByRole('img', { name: 'Representação de uma variável JavaScript com o valor JavaScript.' });
+  await expect(firstLevelImage).toBeVisible();
+  await expect.poll(() => firstLevelImage.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).resolves.toBe(true);
+  await captureEvidence(page, testInfo, 'tcc-15-reader-mobile');
+  await page.getByRole('button', { name: 'Concluir nível' }).click();
+  await expect(page.getByText('Conclusão registrada. Escolha a próxima ação abaixo.')).toBeVisible();
+  await page.getByRole('link', { name: 'Voltar à ilha' }).click();
+
   await finishLevel(page, ['Eventos', 'Clique', 'Interação'], 'Representação de um botão acionado por clique.');
   await finishLevel(page, ['DOM', 'Selecionando elementos', 'Resultado'], 'Representação de uma mensagem atualizada no DOM.');
 
