@@ -4,9 +4,9 @@
 
 **Card:** TCC-15
 
-**Estado:** Macroetapas 1 e 2 concluídas; próxima execução começa na Macroetapa 3
+**Estado:** Macroetapas 1, 2 e 3 concluídas; próxima execução começa na Macroetapa 4
 
-**Última revisão arquitetural:** 21 de agosto de 2026
+**Última revisão arquitetural:** 22 de agosto de 2026
 **Decisão vigente:** [ADR 0011 — Hierarquia direta e progresso por ilha e nível](adr/0011-hierarquia-direta-e-progresso-por-ilha-e-nivel.md)
 
 ## 1. Objetivo
@@ -119,7 +119,7 @@ Os estados não são persistidos e não podem ser enviados pelo cliente.
 Início:
 
 ```text
-POST /api/progress/levels/:levelId/start
+POST /progress/levels/:levelId/start
 body: {}
 ```
 
@@ -131,7 +131,7 @@ body: {}
 Navegação:
 
 ```text
-PUT /api/progress/levels/:levelId/current-slide
+PUT /progress/levels/:levelId/current-slide
 body: { "slideId": "uuid" }
 ```
 
@@ -144,7 +144,7 @@ body: { "slideId": "uuid" }
 Conclusão:
 
 ```text
-POST /api/progress/levels/:levelId/complete
+POST /progress/levels/:levelId/complete
 body: {}
 ```
 
@@ -156,9 +156,10 @@ body: {}
 ### 3.5 Leituras
 
 ```text
-GET /api/learning/islands/:islandSlug
-GET /api/learning/levels/:levelId
-GET /api/progress
+GET /learning/islands/:islandSlug
+GET /learning/levels/:levelId
+GET /learning/media/:mediaAssetId
+GET /progress
 ```
 
 `GET` nunca cria progresso. A leitura de nível devolve slides ordenados com
@@ -263,33 +264,37 @@ com cobertura global acima do gate do repositório.
 
 ## 6. Macroetapa 3 — Jornada no frontend
 
-**Estado:** pendente.
+**Estado:** concluída.
 
 ### Tarefas
 
-1. Criar rotas autenticadas da ilha e do nível usando UUID de `Level` e
-   `Slide` nas URLs.
-2. Criar cliente de API tipado para ilha, nível, snapshot e três comandos.
-3. Implementar página da ilha com estados disponível, em andamento, bloqueado
-   e concluído.
-4. Implementar leitor com renderizadores `TextText`, `TextImage` e `TextCode`.
-5. Exigir ação de “Iniciar nível” antes de abrir o leitor pela primeira vez.
-6. Persistir navegação antes de atualizar a tela.
-7. Mostrar ação explícita de conclusão somente no último slide.
-8. Permitir revisão de níveis concluídos sem alterar `completedAt`.
-9. Tratar os códigos de domínio com mensagens consistentes.
-10. Garantir foco, teclado, texto alternativo, responsividade e estados de
-    carregamento/erro.
+- [x] criar rotas autenticadas da ilha e do nível usando UUID de `Level` e
+  `Slide` nas URLs;
+- [x] criar cliente de API tipado para ilha, nível, snapshot e três comandos;
+- [x] implementar página da ilha com estados disponível, em andamento,
+  bloqueado e concluído;
+- [x] implementar leitor com renderizadores `TextText`, `TextImage` e
+  `TextCode`;
+- [x] exigir ação de “Iniciar nível” antes de abrir o leitor pela primeira vez;
+- [x] persistir navegação antes de atualizar a tela;
+- [x] mostrar ação explícita de conclusão somente no último slide;
+- [x] permitir revisão de níveis concluídos sem alterar `completedAt`;
+- [x] tratar os códigos de domínio com mensagens consistentes;
+- [x] garantir foco, teclado, texto alternativo, responsividade e estados de
+  carregamento/erro;
+- [x] estruturar o frontend por domínio e adotar Tailwind, componentes
+  shadcn/Radix e ícones Lucide.
 
 ### Testes
 
-- página da ilha nos quatro estados;
-- início explícito;
-- anterior/próximo e recarga no cursor persistido;
-- conclusão e desbloqueio;
-- acesso direto bloqueado;
-- renderização dos três subtipos;
-- erro de comando mantém o último slide confirmado.
+- [x] página da ilha nos quatro estados;
+- [x] início explícito;
+- [x] anterior/próximo e recarga no cursor persistido;
+- [x] conclusão e desbloqueio;
+- [x] acesso direto bloqueado;
+- [x] renderização dos três subtipos;
+- [x] erro de comando mantém o último slide confirmado;
+- [x] jornada completa, retomada após nova sessão e mídia autenticada.
 
 Critério de encerramento: uma pessoa conclui os três níveis pelo navegador e,
 após novo login, retoma o estado correto.

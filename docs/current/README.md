@@ -17,10 +17,16 @@ intermediários na API. O [ADR 0011](../adr/0011-hierarquia-direta-e-progresso-p
 As fronteiras de código são:
 
 ```text
-web: app -> modules -> features -> api/shared
+web: app -> modules/features -> shared -> components/ui
 api: controller -> service -> repository port -> Prisma repository -> PrismaService
 contracts: schemas Zod e tipos públicos, sem modelos Prisma
 ```
+
+No frontend, `app` concentra roteamento e providers; `features/auth` contém a
+sessão experimental; `modules/learning` reúne serviços, queries, seletores,
+componentes e views da jornada; `shared` contém o cliente HTTP, cache e estados
+reutilizáveis; e `components/ui` mantém os componentes shadcn/Radix. Tailwind
+centraliza tokens e responsividade, enquanto Lucide fornece os ícones.
 
 Na API, cada capacidade fica em sua pasta (`learning/islands`,
 `learning/levels`, `learning/progress`), com repositories segregados quando há
@@ -45,6 +51,22 @@ POST /progress/levels/:levelId/start
 PUT  /progress/levels/:levelId/current-slide
 POST /progress/levels/:levelId/complete
 ```
+
+As leituras autenticadas usadas pela jornada são:
+
+```text
+GET /learning/islands/:islandSlug
+GET /learning/levels/:levelId
+GET /learning/media/:mediaAssetId
+GET /progress
+```
+
+A interface expõe `/ilhas/:islandSlug` e
+`/ilhas/:islandSlug/niveis/:levelId/slides/:slideId`. A ilha apresenta os quatro
+estados derivados. Um nível disponível exige uma ação explícita de início antes
+de abrir o leitor; o leitor só troca o slide visível após a persistência do novo
+cursor. A conclusão é oferecida somente no último slide, e níveis concluídos
+permanecem revisáveis.
 
 Não fazem parte da fatia: CRUD HTTP administrativo, CMS, trilhas reutilizáveis,
 upload, percentual persistido, histórico de visitas, conclusão de ilha, reset
