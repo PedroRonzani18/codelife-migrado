@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiForbiddenResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { authSessionSchema } from '@codelife/contracts/auth';
@@ -28,6 +28,9 @@ export class AuthController {
   @Post('experimental-login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Inicia a sessão fixa aluna.demo somente em desenvolvimento/teste' })
+  @ApiResponse({ status: 200, description: 'Sessão experimental criada e cookie HttpOnly emitido.' })
+  @ApiResponse({ status: 403, description: 'Login experimental desabilitado fora do ambiente permitido.' })
+  @ApiResponse({ status: 429, description: 'Limite de tentativas atingido.' })
   async experimentalLogin(@Res({ passthrough: true }) response: Response) {
     const { token, user } = await this.auth.startExperimentalSession();
     response.cookie(this.config.getOrThrow<string>('cookieName'), token, sessionCookieOptions(this.config));
@@ -37,6 +40,10 @@ export class AuthController {
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Encerra a sessão e remove o cookie de autenticação' })
+  @ApiBody({ schema: { type: 'object', additionalProperties: false, example: {} } })
+  @ApiResponse({ status: 200, description: 'Cookie de sessão removido.' })
+  @ApiForbiddenResponse({ description: 'Origin não confiável.' })
   logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie(this.config.getOrThrow<string>('cookieName'), clearSessionCookieOptions(this.config));
     return { ok: true };
