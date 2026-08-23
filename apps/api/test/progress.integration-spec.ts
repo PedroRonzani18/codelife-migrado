@@ -68,6 +68,32 @@ describe('authenticated learning progress (integration)', () => {
     expect(await prisma.userIslandProgress.count({ where: { userId: users.first } })).toBe(0);
   });
 
+  it('serves authenticated controlled media and keeps blocked level content closed', async () => {
+    await request(app.getHttpServer())
+      .get(`/learning/media/${fixtureIds.assets[0]}`)
+      .expect(401);
+
+    const session = await cookie();
+    const media = await request(app.getHttpServer())
+      .get(`/learning/media/${fixtureIds.assets[0]}`)
+      .set('Cookie', session)
+      .expect(200);
+    expect(media.headers['content-type']).toMatch(/^image\/svg\+xml/);
+    expect(Buffer.from(media.body as Uint8Array).toString('utf8')).toContain('<svg');
+
+    const blocked = await request(app.getHttpServer())
+      .get(`/learning/levels/${fixtureIds.levels[1]}`)
+      .set('Cookie', session)
+      .expect(403);
+    expect(apiErrorSchema.parse(blocked.body).code).toBe('LEVEL_BLOCKED');
+
+    const invalidMediaId = await request(app.getHttpServer())
+      .get('/learning/media/not-a-uuid')
+      .set('Cookie', session)
+      .expect(400);
+    expect(apiErrorSchema.parse(invalidMediaId.body).code).toBe('VALIDATION_ERROR');
+  });
+
   it('requires authentication, a trusted origin and strict command bodies', async () => {
     await request(app.getHttpServer()).get('/progress').expect(401);
     const session = await cookie();

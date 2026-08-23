@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { levelDetailSchema, type LevelDetail, type Slide } from '@codelife/contracts/learning';
 import { OBJECT_STORAGE, type ObjectStoragePort } from '../media/object-storage.port';
 import { ProgressService } from '../progress/progress.service';
@@ -23,6 +23,9 @@ export class LevelsService {
     const snapshotIsland = snapshot.islands.find((island) => island.id === level.islandId);
     const snapshotLevel = snapshotIsland?.levels.find((candidate) => candidate.id === level.id);
     if (!snapshotLevel) throw new Error('Inconsistent learning data: level is absent from the progress snapshot');
+    if (snapshotLevel.availability === 'blocked') {
+      throw new ForbiddenException({ code: 'LEVEL_BLOCKED', message: 'Nível bloqueado' });
+    }
 
     const slides = await Promise.all(
       level.slides.map((slide, index) => this.mapSlide(slide, level.slides, index)),

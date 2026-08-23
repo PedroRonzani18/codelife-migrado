@@ -15,7 +15,11 @@ describe('PrismaProgressRepository (integration)', () => {
     repository = moduleRef.get(PROGRESS_REPOSITORY);
     prisma = moduleRef.get(PrismaService);
   });
-  afterAll(async () => moduleRef.close());
+  afterAll(async () => {
+    await prisma.userLevelProgress.deleteMany();
+    await prisma.userIslandProgress.deleteMany();
+    await moduleRef.close();
+  });
   beforeEach(async () => {
     await prisma.userLevelProgress.deleteMany();
     await prisma.userIslandProgress.deleteMany();

@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { fixtureIds } from '../../../prisma/seed';
 import type { ObjectStoragePort } from '../media/object-storage.port';
 import type { ProgressService } from '../progress/progress.service';
@@ -37,6 +37,29 @@ describe('LevelsService', () => {
   it('returns not found for an absent level', async () => {
     repository.levelById.mockResolvedValue(null);
     await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects direct reads of a blocked level before loading slide assets', async () => {
+    progress.snapshot.mockResolvedValue({
+      lastVisited: null,
+      nextRecommended: null,
+      islands: [{
+        id: fixtureIds.island,
+        slug: 'island-3',
+        title: 'Interatividade',
+        levelCount: 1,
+        progress: null,
+        levels: [{
+          id: fixtureIds.levels[0],
+          title: 'Variáveis',
+          position: 1,
+          availability: 'blocked',
+          progress: null,
+        }],
+      }],
+    });
+    await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toBeInstanceOf(ForbiddenException);
+    expect(storage.resolveControlledObject).not.toHaveBeenCalled();
   });
 
   it('rejects inconsistent subtypes and a divergent progress snapshot', async () => {
