@@ -17,6 +17,9 @@ module.exports = {
     '!src/**/*.controller.ts',
     '!src/**/*.integration-spec.ts',
     '!src/**/authenticated-request.ts',
+    '!src/**/controller/decorators/**',
+    '!src/**/decorators/**',
+    '!src/**/dto/**',
     '!src/**/public.decorator.ts',
     '!src/bootstrap/configure-app.ts'
   ],
