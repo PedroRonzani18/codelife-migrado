@@ -24,8 +24,8 @@ export function configureApp(app: INestApplication) {
       app,
       new DocumentBuilder()
         .setTitle('CodeLife experimental API')
-        .setDescription('Contratos da fundação do recorte island-3.')
-        .setVersion('0.1.0')
+        .setDescription('Contratos da jornada autenticada TCC-15 para a fixture island-3. Leituras e mídia exigem cookie de sessão; comandos mutáveis também exigem o cabeçalho Origin igual à origem web configurada. Os corpos dos comandos são estritos e erros usam o envelope com código estável e requestId.')
+        .setVersion('0.2.0')
         .addCookieAuth(config.getOrThrow<string>('cookieName'))
         .build(),
     );

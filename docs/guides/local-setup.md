@@ -18,3 +18,21 @@ Para inspeção da API, abra `http://localhost:3001/docs`. Liveness está em
 `/health/live` e readiness do PostgreSQL em `/health/ready`; `/health` continua
 como alias. `GET /auth/me` retorna 401 sem cookie e a pessoa da fixture depois
 do login experimental. Respostas incluem `x-request-id` para correlação.
+
+## Roteiro de inspeção TCC-15 (até dez minutos)
+
+1. No desktop, inicie a sessão e confirme que apenas a primeira etapa está
+   disponível; tente abrir diretamente a segunda e confirme o bloqueio.
+2. Inicie a primeira etapa, avance até o segundo slide com o teclado, saia e
+   entre novamente. A abertura do nível deve recuperar esse mesmo slide.
+3. Conclua as três etapas; a conclusão deve aparecer somente no terceiro slide
+   de cada uma e liberar a seguinte.
+4. Saia e entre outra vez; confirme a ilha concluída e abra uma etapa em modo
+   de revisão, sem alterar sua conclusão.
+5. Repita a inspeção com viewport de 390 px: conteúdo, botões e indicador de
+   slide devem permanecer legíveis, navegáveis por teclado e sem rolagem
+   horizontal.
+
+As capturas de referência e a matriz de rastreabilidade desta execução estão
+em `docs/evidence/tcc-15-validation.md`. A mesma jornada é automatizada pelo
+Playwright dentro de `pnpm verify`.

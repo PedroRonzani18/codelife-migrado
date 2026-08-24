@@ -1,1 +1,1 @@
-export { stableKeySchema } from './common.ts';
+export { stableKeySchema, uuidSchema } from './common.ts';

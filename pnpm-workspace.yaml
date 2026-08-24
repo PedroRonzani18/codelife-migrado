@@ -7,8 +7,12 @@ allowBuilds:
   '@scarf/scarf': false
   '@swc/core': true
   esbuild: true
+  msw: false
   prisma: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - '@testing-library/user-event@14.6.6'
 
 overrides:
   deepmerge-ts: 8.0.1

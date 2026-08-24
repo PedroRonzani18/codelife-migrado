@@ -1,32 +1,69 @@
-import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClientError } from '@/api/client';
-import { getSession, logout, startExperimentalSession } from '@/api/auth';
-import { getExperimentalIsland } from '@/api/learning';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { queryClient } from '@/shared/query';
+import { ApiClientError, domainErrorMessage } from '@/shared/http';
+import { LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
 import { ExperimentalLogin } from '@/features/auth/ExperimentalLogin';
-import { IslandFoundation } from '@/modules/learning/IslandFoundation';
+import { SessionHeader } from '@/features/auth/components/SessionHeader';
+import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
+import { useSessionMutations, useSessionQuery } from '@/features/auth';
+import IslandView from '@/modules/learning/views/IslandView';
+import LevelReaderView from '@/modules/learning/views/LevelReaderView';
 
-const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-function Shell() {
-  const queryClient = useQueryClient();
-  const session = useQuery({ queryKey: ['session'], queryFn: getSession });
-  const login = useMutation({ mutationFn: startExperimentalSession, onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['session'] }) });
-  const leave = useMutation({ mutationFn: logout, onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['session'] }) });
-  const island = useQuery({ queryKey: ['island-3'], queryFn: getExperimentalIsland, enabled: Boolean(session.data) });
-  const hasNoSession = (session.error instanceof ApiClientError || (typeof session.error === 'object' && session.error !== null && 'status' in session.error)) && (session.error as { status?: number }).status === 401;
-
-  return <main className="shell">
-    <header><p className="eyebrow">CodeLife · recorte TCC</p><h1>Fundação modernizada</h1><p>Estrutura executável para a fatia experimental <code>island-3</code>.</p></header>
-    {session.isLoading && <p>Verificando sessão…</p>}
-    {hasNoSession && <ExperimentalLogin onLogin={() => login.mutate()} isPending={login.isPending} error={login.error?.message} />}
-    {session.data && <>
-      <section className="session"><span>Sessão ativa: <strong>{session.data.user.displayName}</strong> (<code>{session.data.user.username}</code>)</span><button className="secondary" type="button" onClick={() => leave.mutate()} disabled={leave.isPending}>Encerrar sessão</button></section>
-      {island.isLoading && <p>Carregando a fixture…</p>}
-      {island.error && <p role="alert">Não foi possível consultar a fixture: {island.error.message}</p>}
-      {island.data && <IslandFoundation island={island.data} />}
-    </>}
-    {!session.isLoading && !hasNoSession && session.error && <p role="alert">Não foi possível verificar a sessão: {session.error.message}</p>}
-  </main>;
+function RootRoute() {
+  const session = useSessionQuery();
+  const { login } = useSessionMutations();
+  const unauthorized = session.error instanceof ApiClientError && session.error.status === 401;
+  if (session.isLoading) return <PageContainer><LoadingState label="Verificando sessão…" /></PageContainer>;
+  if (session.data) return <Navigate to="/ilhas/island-3" replace />;
+  if (unauthorized) {
+    return <ExperimentalLogin onLogin={() => login.mutate()} isPending={login.isPending} error={login.error instanceof ApiClientError ? domainErrorMessage(login.error.code) : login.error?.message} requestId={login.error instanceof ApiClientError ? login.error.requestId : undefined} />;
+  }
+  if (session.error) return <PageContainer><RouteErrorState description="Não foi possível verificar a sessão." onRetry={() => void session.refetch()} /></PageContainer>;
+  return null;
 }
 
-export function App() { return <QueryClientProvider client={client}><Shell /></QueryClientProvider>; }
+function AppShell() {
+  const navigate = useNavigate();
+  const session = useSessionQuery();
+  const { logout } = useSessionMutations();
+  if (!session.data) return null;
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <SessionHeader
+        session={session.data}
+        isPending={logout.isPending}
+        onLogout={() => logout.mutate(undefined, { onSuccess: () => navigate('/', { replace: true }) })}
+      />
+      <Outlet />
+    </div>
+  );
+}
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<RootRoute />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/ilhas/:islandSlug" element={<IslandView />} />
+          <Route path="/ilhas/:islandSlug/niveis/:levelId/slides/:slideId" element={<LevelReaderView />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<PageContainer><RouteErrorState title="Página não encontrada" description="O endereço solicitado não pertence à jornada experimental." /></PageContainer>} />
+    </Routes>
+  );
+}
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}

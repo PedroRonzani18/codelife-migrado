@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { assertNode24, run, runPnpm } from './lib/runtime.mjs';
@@ -9,19 +10,135 @@ const compose = ['compose', '--project-name', project, '-f', 'scripts/verify-com
 let api;
 let web;
 function docker(args) { run('docker', [...compose, ...args]); }
-function testUrl() {
+
+function psql(database, sql) {
+  return execFileSync(
+    'docker',
+    [...compose, 'exec', '-T', 'postgres', 'psql', '--username', 'postgres', '--dbname', database, '--set', 'ON_ERROR_STOP=1', '--tuples-only', '--no-align'],
+    { encoding: 'utf8', input: sql, stdio: ['pipe', 'pipe', 'pipe'] },
+  );
+}
+
+function databaseUrl(database) {
   const portLine = execFileSync('docker', [...compose, 'port', 'postgres', '5432'], { encoding: 'utf8' }).trim();
   const port = portLine.match(/:(\d+)$/)?.[1];
   if (!port) throw new Error(`Could not determine test database port from ${portLine}`);
-  const url = `postgresql://postgres:postgres@127.0.0.1:${port}/codelife_test?application_name=codelife-verify`;
-  assertIsolatedTestDatabase(url);
+  const url = `postgresql://postgres:postgres@127.0.0.1:${port}/${database}?application_name=codelife-verify`;
+  assertIsolatedTestDatabase(url, database);
   return url;
 }
 
-function assertIsolatedTestDatabase(value) {
+function testUrl() {
+  return databaseUrl('codelife_test');
+}
+
+function assertIsolatedTestDatabase(value, database = 'codelife_test') {
   const url = new URL(value);
-  if (url.protocol !== 'postgresql:' || url.hostname !== '127.0.0.1' || url.pathname !== '/codelife_test') {
+  if (url.protocol !== 'postgresql:' || url.hostname !== '127.0.0.1' || url.pathname !== `/${database}`) {
     throw new Error(`Refusing to verify against a non-isolated database: ${url.hostname}${url.pathname}`);
+  }
+}
+
+const tcc14FoundationMigration = readFileSync('apps/api/prisma/migrations/20260816000000_tcc14_foundation/migration.sql', 'utf8');
+const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/20260819000000_harden_persistence/migration.sql', 'utf8');
+const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
+const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
+
+const tcc14FixtureSql = `
+INSERT INTO "User" ("id", "key", "username", "displayName", "createdAt", "updatedAt")
+VALUES ('legacy-user', 'aluna-demo', 'aluna.demo', 'Aluna Demo', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO "Island" ("id", "key", "title", "sortOrder", "createdAt", "updatedAt")
+VALUES ('legacy-island', 'island-3', 'Interatividade', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO "Level" ("id", "key", "islandId", "title", "sortOrder", "createdAt", "updatedAt")
+VALUES ('legacy-level', 'island-3-l1', 'legacy-island', 'Variáveis JS', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO "Slide" ("id", "key", "levelId", "title", "sortOrder", "type", "content", "createdAt", "updatedAt")
+VALUES ('legacy-slide', 'island-3-l1-s1', 'legacy-level', 'Variáveis', 0, 'TextText', 'Variáveis permitem armazenar valores para uso posterior.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+`;
+
+function prepareTcc14Database(database, includeProgress) {
+  psql('codelife_test', `CREATE DATABASE "${database}";`);
+  psql(database, tcc14FoundationMigration);
+  psql(database, tcc14HardeningMigration);
+  psql(database, tcc14FixtureSql);
+  if (includeProgress) {
+    psql(database, `INSERT INTO "UserProgress" ("id", "userId", "levelId", "completedAt") VALUES ('legacy-progress', 'legacy-user', 'legacy-level', CURRENT_TIMESTAMP);`);
+  }
+}
+
+function scalar(database, sql) {
+  return psql(database, sql).trim();
+}
+
+function expectPsqlFailure(database, sql, expectedMessage) {
+  try {
+    psql(database, sql);
+    throw new Error(`Expected PostgreSQL to reject: ${sql}`);
+  } catch (error) {
+    const details = error instanceof Error ? `${error.message}\n${error.stderr ?? ''}` : String(error);
+    if (!details.includes(expectedMessage)) throw error;
+  }
+}
+
+function validateTcc15UpgradeScenarios(env) {
+  const upgradeDatabase = 'codelife_upgrade_empty';
+  prepareTcc14Database(upgradeDatabase, false);
+  psql(upgradeDatabase, tcc15Migration);
+  psql(upgradeDatabase, directHierarchyMigration);
+  runPnpm(['--filter', 'api', 'prisma:seed'], { env: { ...env, DATABASE_URL: databaseUrl(upgradeDatabase) } });
+  if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island";') !== '1'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '3'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '9'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "MediaAsset";') !== '3') {
+    throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 3 × 9 hierarchy');
+  }
+  expectPsqlFailure(
+    upgradeDatabase,
+    `INSERT INTO "Level" ("id", "islandId", "title", "position") VALUES ('00000000-0000-4000-8000-000000000511', '00000000-0000-4000-8000-000000000301', 'Inválido', 0);`,
+    'Level_position_positive',
+  );
+  expectPsqlFailure(
+    upgradeDatabase,
+    `INSERT INTO "Slide" ("id", "levelId", "title", "position", "type") VALUES ('00000000-0000-4000-8000-000000000711', '00000000-0000-4000-8000-000000000501', 'Inválido', 0, 'TextText');`,
+    'Slide_position_positive',
+  );
+  expectPsqlFailure(
+    upgradeDatabase,
+    `INSERT INTO "Level" ("id", "islandId", "title", "position") VALUES ('00000000-0000-4000-8000-000000000512', '00000000-0000-4000-8000-000000000301', 'Duplicado', 1);`,
+    'Level_islandId_position_key',
+  );
+
+  const compositionalProgressDatabase = 'codelife_upgrade_compositional_progress';
+  prepareTcc14Database(compositionalProgressDatabase, false);
+  psql(compositionalProgressDatabase, tcc15Migration);
+  psql(compositionalProgressDatabase, `
+    INSERT INTO "UserTrailProgress" ("id", "userId", "trailId", "currentTrailIslandId")
+    VALUES (
+      '00000000-0000-4000-8000-000000001001',
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000401'
+    );
+  `);
+  expectPsqlFailure(
+    compositionalProgressDatabase,
+    directHierarchyMigration,
+    'compositional progress contains records',
+  );
+  if (scalar(compositionalProgressDatabase, 'SELECT count(*) FROM "UserTrailProgress";') !== '1') {
+    throw new Error('Blocked hierarchy simplification modified compositional progress');
+  }
+
+  const blockedDatabase = 'codelife_upgrade_with_progress';
+  prepareTcc14Database(blockedDatabase, true);
+  try {
+    psql(blockedDatabase, tcc15Migration);
+    throw new Error('TCC-15 migration unexpectedly accepted legacy progress');
+  } catch (error) {
+    const details = error instanceof Error ? `${error.message}\n${error.stderr ?? ''}` : String(error);
+    if (!details.includes('legacy UserProgress contains records')) throw error;
+  }
+  if (scalar(blockedDatabase, 'SELECT count(*) FROM "UserProgress";') !== '1') {
+    throw new Error('Blocked TCC-15 migration modified legacy progress');
   }
 }
 
@@ -78,6 +195,7 @@ try {
   };
   assertIsolatedTestDatabase(env.DATABASE_URL);
   runPnpm(['--filter', 'api', 'prisma:generate'], { env });
+  validateTcc15UpgradeScenarios(env);
   runPnpm(['--filter', 'api', 'prisma:migrate:deploy'], { env });
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });

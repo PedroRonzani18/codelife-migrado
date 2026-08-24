@@ -7,7 +7,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@codelife/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
     '^@codelife/contracts/(.*)$': '<rootDir>/../../packages/contracts/src/$1.ts',
-    '^\\./common\\.js$': '<rootDir>/../../packages/contracts/src/common.ts'
+    '^\\./common\\.js$': '<rootDir>/../../packages/contracts/src/common.ts',
+    '^\\./learning\\.js$': '<rootDir>/../../packages/contracts/src/learning.ts'
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -16,6 +17,9 @@ module.exports = {
     '!src/**/*.controller.ts',
     '!src/**/*.integration-spec.ts',
     '!src/**/authenticated-request.ts',
+    '!src/**/controller/decorators/**',
+    '!src/**/decorators/**',
+    '!src/**/dto/**',
     '!src/**/public.decorator.ts',
     '!src/bootstrap/configure-app.ts'
   ],

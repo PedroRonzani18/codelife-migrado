@@ -1,52 +1,45 @@
 import { SlideType } from '@prisma/client';
-import { assertFixtureIntegrity, islandFixture, type FixtureSnapshot } from './seed';
+import { assertFixtureAssets, assertFixtureIntegrity, fixtureIds, islandFixture, resolveFixtureAssetPath, type FixtureSnapshot } from './seed';
+
+function snapshotSlide(definition: (typeof islandFixture.levels)[number]['slides'][number], index: number) {
+  const base = { id: fixtureIds.slides[index], title: definition.title, type: definition.type, position: (index % 3) + 1, textText: null, textImage: null, textCode: null };
+  if (definition.type === SlideType.TextText) return { ...base, textText: { primaryText: definition.primaryText, secondaryText: definition.secondaryText } };
+  if (definition.type === SlideType.TextImage) return { ...base, textImage: { text: definition.text, altText: definition.altText, mediaAsset: { id: definition.mediaAssetId, objectKey: index === 2 ? 'learning/island-3/variables.svg' : index === 5 ? 'learning/island-3/events.svg' : 'learning/island-3/dom.svg', mimeType: 'image/svg+xml' } } };
+  return { ...base, textCode: { text: definition.text, code: definition.code, language: definition.language } };
+}
 
 function validSnapshot(): NonNullable<FixtureSnapshot> {
   return {
-    id: 'island-database-id',
-    key: islandFixture.key,
+    id: fixtureIds.island,
+    slug: islandFixture.slug,
     title: islandFixture.title,
-    sortOrder: islandFixture.sortOrder,
     levels: islandFixture.levels.map((level, levelIndex) => ({
-      id: `level-database-id-${levelIndex}`,
-      key: level.key,
-      islandId: 'island-database-id',
+      id: fixtureIds.levels[levelIndex],
       title: level.title,
-      sortOrder: level.sortOrder,
-      progress: [],
-      slides: level.slides.map((slide) => ({
-        key: slide.key,
-        levelId: `level-database-id-${levelIndex}`,
-        title: slide.title,
-        sortOrder: slide.sortOrder,
-        type: slide.type,
-        content: slide.content,
-      })),
+      position: levelIndex + 1,
+      slides: level.slides.map((slide, slideIndex) => snapshotSlide(slide, levelIndex * 3 + slideIndex)),
     })),
-  };
+  } as NonNullable<FixtureSnapshot>;
 }
 
 describe('experimental fixture integrity', () => {
-  it('accepts the exact island-3 hierarchy', () => {
+  it('accepts the exact 1 × 3 × 9 hierarchy', () => {
     expect(() => assertFixtureIntegrity(validSnapshot())).not.toThrow();
   });
 
-  it('rejects extra scoped content without deleting it', () => {
-    const snapshot = validSnapshot();
-    snapshot.levels.push({ ...snapshot.levels[0], id: 'extra-level', key: 'extra-level', islandId: snapshot.id, progress: [], slides: [] });
-
-    expect(() => assertFixtureIntegrity(snapshot)).toThrow('expected exactly 3 levels under island-3');
-  });
-
   it.each([
-    ['a level linked to another island', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].islandId = 'other-island'; }, 'references another island'],
-    ['a slide linked to another level', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].slides[0].levelId = 'other-level'; }, 'references another level'],
-    ['an unexpected slide type', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].slides[0].type = SlideType.TextImage; }, 'unexpected type'],
-    ['an existing progress record', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].progress.push({ id: 'progress-1' }); }, 'expected zero progress records'],
+    ['an additional level', (snapshot: NonNullable<FixtureSnapshot>) => snapshot.levels.push(snapshot.levels[0]), 'expected exactly 3 levels'],
+    ['a non-consecutive position', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[1].position = 4; }, 'unexpected level position 2'],
+    ['a wrong slide identity', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].slides[0].id = fixtureIds.slides[1]; }, 'unexpected slide at index'],
+    ['more than one subtype', (snapshot: NonNullable<FixtureSnapshot>) => { snapshot.levels[0].slides[0].textCode = { text: 'x', code: 'x', language: 'text' }; }, 'must have exactly one subtype'],
   ])('rejects %s', (_description, mutate, message) => {
     const snapshot = validSnapshot();
     mutate(snapshot);
-
     expect(() => assertFixtureIntegrity(snapshot)).toThrow(message);
+  });
+
+  it('uses controlled local assets', async () => {
+    await expect(assertFixtureAssets()).resolves.toBeUndefined();
+    expect(() => resolveFixtureAssetPath('../outside.svg')).toThrow('unsafe media object key');
   });
 });
