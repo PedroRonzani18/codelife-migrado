@@ -1,0 +1,7 @@
+model TextCodeSlide {
+  slideId  String @id @db.Uuid
+  text     String
+  code     String
+  language String
+  slide    Slide  @relation(fields: [slideId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}

@@ -1,0 +1,8 @@
+title = "CodeLife Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixture JWT explicitly used by the configuration test"
+regexes = [ '''integration-test-secret-with-32-characters''' ]
