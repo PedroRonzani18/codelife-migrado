@@ -20,13 +20,6 @@ export interface NewUserWithExternalIdentity extends ExternalIdentityInput {
   displayName: string;
 }
 
-export class AuthRepositoryUniqueConstraintError extends Error {
-  constructor() {
-    super('Authentication persistence unique constraint conflict');
-    this.name = 'AuthRepositoryUniqueConstraintError';
-  }
-}
-
 export interface IAuthRepository {
   findUserById(id: string): Promise<AuthUser | null>;
   findUserByKey(key: string): Promise<AuthUser | null>;

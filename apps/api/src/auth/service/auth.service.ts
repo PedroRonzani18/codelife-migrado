@@ -3,10 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
 import { AUTH_PROVIDER_KEYS } from '../constants';
-import {
-  AuthRepositoryUniqueConstraintError,
-  type IAuthRepository,
-} from '../repository/auth.repository.interface';
+import type { IAuthRepository } from '../repository/auth.repository.interface';
+import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
 import type { GoogleIdentity } from '../google-auth/google-auth.types';
 import type { ExperimentalSession, IAuthService } from './auth.service.interface';
 
@@ -60,7 +58,7 @@ export class AuthService implements IAuthService {
           displayName,
         });
       } catch (error) {
-        if (!(error instanceof AuthRepositoryUniqueConstraintError)) throw error;
+        if (!(error instanceof UniqueConstraintViolationError)) throw error;
 
         const concurrentlyCreatedUser = await this.repository.findUserByExternalIdentity(
           GOOGLE_PROVIDER,

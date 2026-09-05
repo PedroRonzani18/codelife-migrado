@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { IdentityProvider, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import {
-  AuthRepositoryUniqueConstraintError,
-  type AuthIdentityProvider,
-  type IAuthRepository,
-  type NewUserWithExternalIdentity,
+import type {
+  AuthIdentityProvider,
+  IAuthRepository,
+  NewUserWithExternalIdentity,
 } from './auth.repository.interface';
+import { UniqueConstraintViolationError } from './unique-constraint-violation.error';
 
 @Injectable()
 export class PrismaAuthRepository implements IAuthRepository {
@@ -56,7 +56,7 @@ export class PrismaAuthRepository implements IAuthRepository {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new AuthRepositoryUniqueConstraintError();
+        throw new UniqueConstraintViolationError();
       }
       throw error;
     }

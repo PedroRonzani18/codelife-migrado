@@ -1,9 +1,7 @@
 import { IdentityProvider, Prisma } from '@prisma/client';
 import type { PrismaService } from '../../prisma/prisma.service';
-import {
-  AuthRepositoryUniqueConstraintError,
-} from './auth.repository.interface';
 import { PrismaAuthRepository } from './prisma-auth.repository';
+import { UniqueConstraintViolationError } from './unique-constraint-violation.error';
 
 describe('PrismaAuthRepository', () => {
   const findUnique = jest.fn();
@@ -93,6 +91,6 @@ describe('PrismaAuthRepository', () => {
       key: 'generated-key',
       username: 'user',
       displayName: 'User',
-    })).rejects.toBeInstanceOf(AuthRepositoryUniqueConstraintError);
+    })).rejects.toBeInstanceOf(UniqueConstraintViolationError);
   });
 });

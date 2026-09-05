@@ -1,10 +1,8 @@
 import { ForbiddenException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
-import {
-  AuthRepositoryUniqueConstraintError,
-  type IAuthRepository,
-} from '../repository/auth.repository.interface';
+import type { IAuthRepository } from '../repository/auth.repository.interface';
+import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
 import { AuthService, EXPERIMENTAL_USER_KEY } from './auth.service';
 
 describe('AuthService', () => {
@@ -112,7 +110,7 @@ describe('AuthService', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(firstUser);
     repository.createUserWithExternalIdentity
-      .mockRejectedValueOnce(new AuthRepositoryUniqueConstraintError())
+      .mockRejectedValueOnce(new UniqueConstraintViolationError())
       .mockResolvedValueOnce(firstUser);
 
     await expect(service.resolveGoogleIdentity({
