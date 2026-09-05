@@ -1,45 +1,71 @@
 ---
 name: codelife-change-contract
-description: Planejar ou implementar uma feature, correção funcional ou alteração de comportamento no CodeLife migrado preservando o recorte experimental, as decisões registradas e a validação proporcional.
+description: Executar o pré-voo de uma mudança no CodeLife migrado, preservando escopo, decisões, invariantes e validação proporcional antes da implementação.
 ---
 
-# Contrato de mudança do CodeLife
+# Pré-voo de mudança do CodeLife
 
-Use este skill antes de editar código para feature, bug, endpoint, fluxo de
-interface, contrato, persistência ou documentação comportamental.
+Use este skill antes de editar código, documentação comportamental, contratos
+ou persistência para uma feature, correção, endpoint ou alteração de fluxo.
 
-## Leitura mínima
+Esta é uma skill transversal de planejamento. Ela não substitui as skills
+técnicas: depois do pré-voo, use a skill especializada da superfície afetada,
+como frontend, endpoint ou arquitetura. Não repita aqui detalhes técnicos que
+pertencem a essas skills.
+
+## Leitura mínima obrigatória
 
 1. Leia `AGENTS.md`, `.codex/context/current-contract.md` e
    `.codex/context/decision-index.md`.
-2. Identifique as linhas do índice afetadas e leia apenas as fontes apontadas.
-3. Verifique `git status --short --branch` antes de planejar escrita.
+2. Identifique as linhas do índice afetadas e leia somente as fontes apontadas.
+3. Execute `git status --short --branch` antes de planejar qualquer escrita.
+4. Identifique a skill técnica necessária:
+   - `codelife-frontend-validation` para tela, rota ou fluxo React;
+   - `codelife-nest-endpoint` para endpoint, capacidade de API ou persistência;
+   - `codelife-architecture-review` para módulos, camadas, abstrações,
+     contratos públicos, schema ou migrations.
 
-## Contrato antes da edição
+Para uma mudança estrutural, a revisão arquitetural vem antes da implementação.
+Para mudanças de frontend ou API, encaminhe o resumo deste pré-voo à skill
+especializada correspondente.
 
-Declare de forma curta:
+## Resumo do contrato antes da edição
+
+Declare de forma curta, sem detalhar a implementação:
 
 - objetivo observável;
 - dentro e fora de escopo;
 - invariantes e decisões carregadas;
-- arquivos e consumidores afetados;
-- validação mínima e evidência/documentação necessária;
-- riscos ou informação que depende do usuário.
+- superfícies e consumidores potencialmente afetados;
+- validação mínima e evidência ou documentação necessária;
+- riscos, ambiguidades ou informação que depende do usuário.
+
+Não invente regra de produto, comportamento do legado, evidência ou resultado.
+Não transforme o resumo em um plano técnico completo: a skill especializada
+deve detalhar request/response, estados da tela, camadas, testes e comandos
+específicos da superfície alterada.
 
 Se uma mudança contrariar o contrato atual ou criar uma nova capacidade fora do
 recorte, não a implemente por inferência: proponha alternativas e peça direção.
 
-## Durante a implementação
+## Limites durante a implementação
 
 - Faça a menor alteração que satisfaça o contrato.
-- Atualize API, contratos e web de forma coordenada quando a superfície pública
-  mudar.
 - Preserve alterações locais não relacionadas.
 - Não faça commit, push, PR, alteração em Jira ou publicação sem autorização
   explícita na conversa atual.
+- Quando a superfície pública mudar, coordene API, `packages/contracts` e web
+  conforme orientado pela skill especializada.
 
-## Encerramento
+## Encerramento do trabalho
 
-Relate arquivos alterados, comportamento entregue, validações executadas e
-riscos residuais. Atualize roadmap, ADR ou evidência apenas quando a mudança
-realmente alterar escopo, decisão ou comportamento validado.
+Ao finalizar, relate:
+
+- arquivos e superfícies alterados;
+- comportamento entregue;
+- validações realmente executadas e as que ficaram pendentes;
+- riscos residuais ou decisões ainda necessárias.
+
+Atualize roadmap, ADR ou evidência somente quando a mudança alterar escopo,
+decisão ou comportamento validado. A skill especializada continua responsável
+por relatar seus detalhes técnicos específicos.
