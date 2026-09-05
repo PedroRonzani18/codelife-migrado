@@ -22,6 +22,9 @@ describe('validateConfig', () => {
       cookieMaxAgeSeconds: 28_800,
       experimentalLoginEnabled: false,
       swaggerEnabled: true,
+      googleClientId: undefined,
+      googleClientSecret: undefined,
+      googleRedirectUri: undefined,
     });
   });
 
@@ -100,5 +103,30 @@ describe('validateConfig', () => {
       jwtAudience: 'example-web',
       swaggerEnabled: false,
     });
+  });
+
+  it('accepts optional Google OIDC configuration', () => {
+    expect(validateConfig({
+      ...required,
+      GOOGLE_CLIENT_ID: 'google-client-id',
+      GOOGLE_CLIENT_SECRET: 'google-client-secret',
+      GOOGLE_REDIRECT_URI: 'http://localhost:3001/auth/google/callback',
+    })).toMatchObject({
+      googleClientId: 'google-client-id',
+      googleClientSecret: 'google-client-secret',
+      googleRedirectUri: 'http://localhost:3001/auth/google/callback',
+    });
+  });
+
+  it.each([
+    ['ftp://localhost/callback', 'GOOGLE_REDIRECT_URI'],
+    ['not-a-url', 'GOOGLE_REDIRECT_URI'],
+  ])('rejects invalid Google redirect URI %s', (redirectUri, message) => {
+    expect(() => validateConfig({ ...required, GOOGLE_REDIRECT_URI: redirectUri })).toThrow(message);
+  });
+
+  it('requires the Google client ID and redirect URI when partially configured', () => {
+    expect(() => validateConfig({ ...required, GOOGLE_CLIENT_SECRET: 'secret' })).toThrow('GOOGLE_CLIENT_ID');
+    expect(() => validateConfig({ ...required, GOOGLE_CLIENT_ID: 'client-id' })).toThrow('GOOGLE_REDIRECT_URI');
   });
 });

@@ -8,12 +8,14 @@ import { AUTH_PROVIDER_KEYS } from './constants';
 import { AuthService } from './service/auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { ExperimentalLoginThrottleGuard } from './guards/experimental-login-throttle.guard';
+import { GoogleAuthModule } from './google-auth/google-auth.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ClearSessionCookieInterceptor, SetSessionCookieInterceptor } from './interceptors/session-cookie.interceptor';
 import { PrismaAuthRepository } from './repository/prisma-auth.repository';
 
 @Module({
   imports: [
+    GoogleAuthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
