@@ -2,23 +2,22 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryClient } from '@/shared/query';
-import { ApiClientError, domainErrorMessage } from '@/shared/http';
+import { ApiClientError } from '@/shared/http';
 import { LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
-import { ExperimentalLogin } from '@/features/auth/ExperimentalLogin';
+import { GoogleLogin } from '@/features/auth/GoogleLogin';
 import { SessionHeader } from '@/features/auth/components/SessionHeader';
 import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
-import { useSessionMutations, useSessionQuery } from '@/features/auth';
+import { startGoogleLogin, useSessionMutations, useSessionQuery } from '@/features/auth';
 import IslandView from '@/modules/learning/views/IslandView';
 import LevelReaderView from '@/modules/learning/views/LevelReaderView';
 
 function RootRoute() {
   const session = useSessionQuery();
-  const { login } = useSessionMutations();
   const unauthorized = session.error instanceof ApiClientError && session.error.status === 401;
   if (session.isLoading) return <PageContainer><LoadingState label="Verificando sessão…" /></PageContainer>;
   if (session.data) return <Navigate to="/ilhas/island-3" replace />;
   if (unauthorized) {
-    return <ExperimentalLogin onLogin={() => login.mutate()} isPending={login.isPending} error={login.error instanceof ApiClientError ? domainErrorMessage(login.error.code) : login.error?.message} requestId={login.error instanceof ApiClientError ? login.error.requestId : undefined} />;
+    return <GoogleLogin onLogin={startGoogleLogin} />;
   }
   if (session.error) return <PageContainer><RouteErrorState description="Não foi possível verificar a sessão." onRetry={() => void session.refetch()} /></PageContainer>;
   return null;
