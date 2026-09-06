@@ -118,4 +118,20 @@ describe('GoogleAuthService', () => {
       codeVerifier: 'verifier',
     })).rejects.toThrow('does not match');
   });
+
+  it('propagates OIDC validation failures such as an invalid state', async () => {
+    const protocol = createProtocol();
+    protocol.authorizationCodeGrant.mockRejectedValue(new Error('invalid state'));
+    const service = new GoogleAuthService(createConfig({
+      googleClientId: 'client-id',
+      googleRedirectUri: 'http://localhost:3001/auth/google/callback',
+    }), protocol);
+
+    await expect(service.handleCallback({
+      callbackUrl: 'http://localhost:3001/auth/google/callback?code=code&state=state',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    })).rejects.toThrow('invalid state');
+  });
 });

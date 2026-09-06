@@ -5,6 +5,7 @@ import { IdentityProvider } from '@prisma/client';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { authSessionSchema } from '@codelife/contracts/auth';
+import { apiErrorSchema } from '@codelife/contracts/errors';
 import { progressSnapshotSchema } from '@codelife/contracts/progress';
 import { fixtureIds } from '../prisma/seed';
 import { AppModule } from '../src/app.module';
@@ -32,6 +33,12 @@ describe('Google identity and learning progress (integration)', () => {
       email: `macrostep-6-b-${randomUUID()}@example.com`,
       emailVerified: true,
       displayName: 'Macrostep Six Person B',
+    },
+    failed: {
+      subject: `macrostep-7-failed-${randomUUID()}`,
+      email: `macrostep-7-failed-${randomUUID()}@example.com`,
+      emailVerified: true,
+      displayName: 'Macrostep Seven Failed',
     },
   } as const;
   type TestIdentity = (typeof identities)[keyof typeof identities];
@@ -72,7 +79,11 @@ describe('Google identity and learning progress (integration)', () => {
 
   async function clearCreatedUsers() {
     const externalIdentities = await prisma.externalIdentity.findMany({
-      where: { subject: { in: [identities.first.subject, identities.second.subject] } },
+      where: {
+        subject: {
+          in: [identities.first.subject, identities.second.subject, identities.failed.subject],
+        },
+      },
       select: { userId: true },
     });
     const userIds = externalIdentities.map(({ userId }) => userId);
@@ -193,5 +204,35 @@ describe('Google identity and learning progress (integration)', () => {
     expect(firstProgress.currentSlideId).toBe(fixtureIds.slides[1]);
     expect(secondProgress.currentSlideId).toBe(fixtureIds.slides[0]);
     expect(secondIdentity.user.id).not.toBe(firstIdentity.user.id);
+
+    const logout = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Cookie', reloginSession)
+      .set('Origin', origin)
+      .send({})
+      .expect(200);
+    expect(cookieHeaders(logout.headers['set-cookie']).find((header) => header.startsWith(`${sessionCookieName}=`))).toEqual(
+      expect.stringContaining('Expires=Thu, 01 Jan 1970'),
+    );
+    expect(apiErrorSchema.parse((await request(app.getHttpServer()).get('/auth/me').expect(401)).body).code).toBe('UNAUTHORIZED');
+    expect(apiErrorSchema.parse((await request(app.getHttpServer()).get('/progress').expect(401)).body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('rejects an invalid OIDC callback without creating identity or session', async () => {
+    currentIdentity = identities.failed;
+    googleAuth.handleCallback.mockRejectedValue(new Error('invalid state'));
+
+    const start = await request(app.getHttpServer()).get('/auth/google').expect(302);
+    const transactionCookie = cookieValue(start.headers['set-cookie'], GOOGLE_AUTH_TRANSACTION_COOKIE);
+    expect(transactionCookie).toBeDefined();
+
+    const callback = await request(app.getHttpServer())
+      .get('/auth/google/callback?code=authorization-code&state=provider-state')
+      .set('Cookie', transactionCookie!)
+      .expect(401);
+    expect(apiErrorSchema.parse(callback.body).code).toBe('UNAUTHORIZED');
+    expect(cookieValue(callback.headers['set-cookie'], sessionCookieName)).toBeUndefined();
+    await expect(prisma.externalIdentity.findFirst({ where: { subject: identities.failed.subject } })).resolves.toBeNull();
+    expect(apiErrorSchema.parse((await request(app.getHttpServer()).get('/auth/me').expect(401)).body).code).toBe('UNAUTHORIZED');
   });
 });

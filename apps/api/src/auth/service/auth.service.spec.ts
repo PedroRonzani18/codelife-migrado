@@ -70,6 +70,13 @@ describe('AuthService', () => {
     }, { expiresIn: '10m' });
   });
 
+  it('converts a provider failure while starting Google authorization to service unavailable', async () => {
+    googleAuth.createAuthorizationUrl.mockRejectedValue(new Error('provider unavailable'));
+
+    await expect(service.startGoogleAuthorization()).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(jwt.signAsync).not.toHaveBeenCalled();
+  });
+
   it('validates the signed transaction, resolves the identity and issues the internal session', async () => {
     jwt.verifyAsync.mockResolvedValue({
       purpose: 'google-auth-transaction',
