@@ -185,6 +185,7 @@ try {
     JWT_SECRET: 'codelife-verify-secret-with-32-characters',
     JWT_ISSUER: 'codelife-api',
     JWT_AUDIENCE: 'codelife-web',
+    AUTH_COOKIE_NAME: 'codelife_session',
     AUTH_COOKIE_SECURE: 'false',
     AUTH_COOKIE_SAME_SITE: 'lax',
     AUTH_COOKIE_MAX_AGE_SECONDS: '3600',

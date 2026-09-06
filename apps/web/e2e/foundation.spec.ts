@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 const blockedLevelUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000502/slides/00000000-0000-4000-8000-000000000704';
 const firstLevelSecondSlideUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000501/slides/00000000-0000-4000-8000-000000000702';
 const apiUrl = process.env.WEB_E2E_API_URL ?? process.env.VITE_API_URL ?? 'http://localhost:3001';
+const authCookieName = process.env.WEB_E2E_AUTH_COOKIE_NAME ?? process.env.AUTH_COOKIE_NAME ?? 'codelife_session';
 
 async function captureEvidence(page: import('@playwright/test').Page, testInfo: import('@playwright/test').TestInfo, name: string) {
   const path = testInfo.outputPath(`${name}.png`);
@@ -55,7 +56,7 @@ test('completes, unlocks, reviews and resumes the controlled journey', async ({ 
   await startFixtureSession(page);
   await page.goto('/ilhas/island-3');
   await expect(page.getByRole('heading', { name: 'Interatividade' })).toBeVisible();
-  await expect.poll(async () => (await page.context().cookies()).some((cookie) => cookie.name === 'codelife_experimental_session')).toBe(true);
+  await expect.poll(async () => (await page.context().cookies()).some((cookie) => cookie.name === authCookieName)).toBe(true);
 
   await page.goto(blockedLevelUrl);
   await expect(page.getByRole('alert')).toContainText('Nível bloqueado');
