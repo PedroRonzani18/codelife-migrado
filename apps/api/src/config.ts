@@ -33,6 +33,26 @@ function isHttpOrigin(value: string) {
   }
 }
 
+function isHttpUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return (
+      ['http:', 'https:'].includes(parsed.protocol) &&
+      Boolean(parsed.hostname) &&
+      !parsed.username &&
+      !parsed.password
+    );
+  } catch {
+    return false;
+  }
+}
+
+const optionalNonEmptyString = () =>
+  z.preprocess(
+    (value) => (value === undefined || value === '' ? undefined : value),
+    z.string().trim().min(1).optional(),
+  );
+
 const configSchema = z
   .object({
     NODE_ENV: z
@@ -100,7 +120,7 @@ const configSchema = z
       .string({ error: 'AUTH_COOKIE_NAME is required' })
       .trim()
       .min(1, { error: 'AUTH_COOKIE_NAME is required' })
-      .default('codelife_experimental_session'),
+      .default('codelife_session'),
     AUTH_COOKIE_SECURE: z
       .stringbool({ error: 'AUTH_COOKIE_SECURE must be true or false' })
       .optional(),
@@ -133,6 +153,12 @@ const configSchema = z
     SWAGGER_ENABLED: z
       .stringbool({ error: 'SWAGGER_ENABLED must be true or false' })
       .optional(),
+    GOOGLE_CLIENT_ID: optionalNonEmptyString(),
+    GOOGLE_CLIENT_SECRET: optionalNonEmptyString(),
+    GOOGLE_REDIRECT_URI: optionalNonEmptyString().refine(
+      (value) => value === undefined || isHttpUrl(value),
+      { error: 'GOOGLE_REDIRECT_URI must be a valid HTTP or HTTPS URL' },
+    ),
   })
   .transform((config, ctx) => {
     const cookieSecure =
@@ -162,6 +188,24 @@ const configSchema = z
       });
     }
 
+    const googleOidcConfigured = Boolean(
+      config.GOOGLE_CLIENT_ID || config.GOOGLE_CLIENT_SECRET || config.GOOGLE_REDIRECT_URI,
+    );
+    if (googleOidcConfigured && !config.GOOGLE_CLIENT_ID) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_CLIENT_ID'],
+        message: 'GOOGLE_CLIENT_ID is required when Google OIDC is configured',
+      });
+    }
+    if (googleOidcConfigured && !config.GOOGLE_REDIRECT_URI) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_REDIRECT_URI'],
+        message: 'GOOGLE_REDIRECT_URI is required when Google OIDC is configured',
+      });
+    }
+
     return {
       nodeEnv: config.NODE_ENV,
       port: config.API_PORT,
@@ -177,6 +221,9 @@ const configSchema = z
       cookieMaxAgeSeconds: config.AUTH_COOKIE_MAX_AGE_SECONDS,
       experimentalLoginEnabled: config.EXPERIMENTAL_LOGIN_ENABLED,
       swaggerEnabled,
+      googleClientId: config.GOOGLE_CLIENT_ID,
+      googleClientSecret: config.GOOGLE_CLIENT_SECRET,
+      googleRedirectUri: config.GOOGLE_REDIRECT_URI,
     };
   });
 

@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ApiClientError, domainErrorMessage } from '@/shared/http';
 import { LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
-import { useSessionMutations, useSessionQuery } from '@/features/auth';
-import { ExperimentalLogin } from '../ExperimentalLogin';
+import { startGoogleLogin, useSessionQuery } from '@/features/auth';
+import { GoogleLogin } from '../GoogleLogin';
 
 function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiClientError && error.status === 401;
@@ -11,18 +11,10 @@ function isUnauthorized(error: unknown): boolean {
 export function ProtectedRoute() {
   const location = useLocation();
   const session = useSessionQuery();
-  const { login } = useSessionMutations();
 
   if (session.isLoading) return <PageContainer><LoadingState label="Verificando sessão…" /></PageContainer>;
   if (isUnauthorized(session.error)) {
-    return (
-      <ExperimentalLogin
-        onLogin={() => login.mutate()}
-        isPending={login.isPending}
-        error={login.error instanceof ApiClientError ? domainErrorMessage(login.error.code) : login.error?.message}
-        requestId={login.error instanceof ApiClientError ? login.error.requestId : undefined}
-      />
-    );
+    return <GoogleLogin onLogin={startGoogleLogin} />;
   }
   if (session.error) {
     const error = session.error instanceof ApiClientError ? session.error : undefined;

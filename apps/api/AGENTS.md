@@ -18,4 +18,23 @@ demonstrada.
   repository Prisma requer também teste de integração quando consulta, ordem ou
   relação do banco mudar.
 
+## Fluxo para novos endpoints
+
+Antes de editar, descreva o caso de uso observável, o escopo, os consumidores e
+as regras de negócio confirmadas. Use o skill `codelife-nest-endpoint` para
+organizar a execução e o `codelife-change-contract` para registrar o contrato
+da mudança.
+
+- Defina primeiro o shape público, os códigos de erro, a autenticação e a
+  autorização; não derive o contrato HTTP diretamente de tipos Prisma.
+- Escolha a capacidade de negócio dona do endpoint antes de criar o módulo e
+  mantenha controller, service, repository, ports e testes próximos dela.
+- Crie uma migration ou alteração de seed somente quando houver necessidade
+  persistente demonstrada; não use o seed como substituto de um importador.
+- Se o endpoint fizer parte de uma tela nova, registre explicitamente o
+  consumidor web e coordene a mudança com `packages/contracts`.
+- Durante o desenvolvimento, use validação proporcional; antes de encerrar a
+  fatia, não deixe testes, migrations, OpenAPI ou consumidores afetados sem
+  uma situação registrada.
+
 Leia ADRs 0008 e 0009 antes de uma reorganização estrutural.

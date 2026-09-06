@@ -3,3 +3,7 @@ enum SlideType {
   TextImage
   TextCode
 }
+
+enum IdentityProvider {
+  GOOGLE
+}

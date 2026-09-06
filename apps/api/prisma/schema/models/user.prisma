@@ -1,9 +1,10 @@
 model User {
-  id            String              @id @default(uuid()) @db.Uuid
-  key           String              @unique
-  username      String              @unique
-  displayName   String
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  islandProgress UserIslandProgress[]
+  id                 String               @id @default(uuid()) @db.Uuid
+  key                String               @unique
+  username           String               @unique
+  displayName        String
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  islandProgress     UserIslandProgress[]
+  externalIdentities ExternalIdentity[]
 }
