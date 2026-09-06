@@ -120,7 +120,7 @@ const configSchema = z
       .string({ error: 'AUTH_COOKIE_NAME is required' })
       .trim()
       .min(1, { error: 'AUTH_COOKIE_NAME is required' })
-      .default('codelife_experimental_session'),
+      .default('codelife_session'),
     AUTH_COOKIE_SECURE: z
       .stringbool({ error: 'AUTH_COOKIE_SECURE must be true or false' })
       .optional(),

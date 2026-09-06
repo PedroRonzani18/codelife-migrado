@@ -1,6 +1,7 @@
 import { ForbiddenException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
+import type { GoogleAuthService } from '../google-auth/google-auth.service';
 import type { IAuthRepository } from '../repository/auth.repository.interface';
 import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
 import { AuthService, EXPERIMENTAL_USER_KEY } from './auth.service';
@@ -9,6 +10,7 @@ describe('AuthService', () => {
   const user = { id: 'db-user-1', key: EXPERIMENTAL_USER_KEY, username: 'aluna.demo', displayName: 'Aluna Demo' };
   let repository: jest.Mocked<IAuthRepository>;
   let jwt: { signAsync: jest.Mock; verifyAsync: jest.Mock };
+  let googleAuth: { createAuthorizationUrl: jest.Mock; handleCallback: jest.Mock };
   let values: Record<string, unknown>;
   let service: AuthService;
 
@@ -20,9 +22,10 @@ describe('AuthService', () => {
       createUserWithExternalIdentity: jest.fn(),
     };
     jwt = { signAsync: jest.fn(), verifyAsync: jest.fn() };
+    googleAuth = { createAuthorizationUrl: jest.fn(), handleCallback: jest.fn() };
     values = { nodeEnv: 'test', experimentalLoginEnabled: true, jwtIssuer: 'codelife-api', jwtAudience: 'codelife-web' };
     const config = { getOrThrow: (key: string) => values[key] } as unknown as ConfigService;
-    service = new AuthService(repository, jwt as unknown as JwtService, config);
+    service = new AuthService(repository, jwt as unknown as JwtService, config, googleAuth as unknown as GoogleAuthService);
   });
 
   it('issues a session only for the fixed seed user', async () => {
@@ -44,6 +47,79 @@ describe('AuthService', () => {
   it('fails safely when the fixture identity is absent', async () => {
     repository.findUserByKey.mockResolvedValue(null);
     await expect(service.startExperimentalSession()).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
+  it('signs the OIDC transaction before starting Google authorization', async () => {
+    googleAuth.createAuthorizationUrl.mockResolvedValue({
+      authorizationUrl: 'https://accounts.google.com/auth',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    });
+    jwt.signAsync.mockResolvedValue('transaction-token');
+
+    await expect(service.startGoogleAuthorization()).resolves.toEqual({
+      authorizationUrl: 'https://accounts.google.com/auth',
+      transactionToken: 'transaction-token',
+    });
+    expect(jwt.signAsync).toHaveBeenCalledWith({
+      purpose: 'google-auth-transaction',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    }, { expiresIn: '10m' });
+  });
+
+  it('validates the signed transaction, resolves the identity and issues the internal session', async () => {
+    jwt.verifyAsync.mockResolvedValue({
+      purpose: 'google-auth-transaction',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    });
+    googleAuth.handleCallback.mockResolvedValue({
+      subject: 'google-subject',
+      displayName: 'Person Example',
+    });
+    repository.findUserByExternalIdentity.mockResolvedValue(user);
+    jwt.signAsync.mockResolvedValue('session-token');
+
+    await expect(service.completeGoogleAuthentication({
+      callbackUrl: 'http://localhost:3001/auth/google/callback?code=code&state=state',
+      transactionToken: 'transaction-token',
+    })).resolves.toEqual({ token: 'session-token', user });
+    expect(jwt.verifyAsync).toHaveBeenCalledWith('transaction-token', {
+      algorithms: ['HS256'],
+      issuer: 'codelife-api',
+      audience: 'codelife-web',
+    });
+    expect(googleAuth.handleCallback).toHaveBeenCalledWith({
+      callbackUrl: 'http://localhost:3001/auth/google/callback?code=code&state=state',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    });
+    expect(jwt.signAsync).toHaveBeenCalledWith({ sub: user.id });
+  });
+
+  it('rejects invalid transactions and provider callback failures without creating a session', async () => {
+    jwt.verifyAsync.mockRejectedValue(new Error('invalid transaction'));
+    await expect(service.completeGoogleAuthentication({ callbackUrl: 'http://localhost:3001/auth/google/callback' }))
+      .rejects.toBeInstanceOf(UnauthorizedException);
+    expect(googleAuth.handleCallback).not.toHaveBeenCalled();
+
+    jwt.verifyAsync.mockResolvedValue({
+      purpose: 'google-auth-transaction',
+      state: 'state',
+      nonce: 'nonce',
+      codeVerifier: 'verifier',
+    });
+    googleAuth.handleCallback.mockRejectedValue(new Error('provider rejected callback'));
+    await expect(service.completeGoogleAuthentication({
+      callbackUrl: 'http://localhost:3001/auth/google/callback',
+      transactionToken: 'transaction-token',
+    })).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(jwt.signAsync).not.toHaveBeenCalled();
   });
 
   it('resolves an existing Google identity without creating another user', async () => {

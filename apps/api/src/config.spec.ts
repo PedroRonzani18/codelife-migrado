@@ -16,7 +16,7 @@ describe('validateConfig', () => {
       jwtExpiresIn: '8h',
       jwtIssuer: 'codelife-api',
       jwtAudience: 'codelife-web',
-      cookieName: 'codelife_experimental_session',
+      cookieName: 'codelife_session',
       cookieSecure: false,
       cookieSameSite: 'lax',
       cookieMaxAgeSeconds: 28_800,

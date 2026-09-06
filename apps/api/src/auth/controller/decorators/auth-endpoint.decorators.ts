@@ -23,6 +23,22 @@ export function ExperimentalLoginEndpoint() {
   );
 }
 
+export function GoogleAuthorizationEndpoint() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Inicia a autenticação Google e redireciona para o provedor' }),
+    ApiResponse({ status: 302, description: 'Redirecionamento para o Google com transação OIDC protegida.' }),
+    ApiResponse({ status: 503, description: 'Integração Google não configurada ou indisponível.' }),
+  );
+}
+
+export function GoogleCallbackEndpoint() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Processa o callback Google e cria a sessão local' }),
+    ApiResponse({ status: 302, description: 'Sessão CodeLife criada e redirecionamento para o frontend.' }),
+    ApiResponse({ status: 401, description: 'Callback, transação ou claims Google inválidos.' }),
+  );
+}
+
 export function LogoutEndpoint() {
   return applyDecorators(
     HttpCode(HttpStatus.OK),

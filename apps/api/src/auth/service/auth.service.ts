@@ -3,14 +3,28 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
 import { AUTH_PROVIDER_KEYS } from '../constants';
+import { GoogleAuthService } from '../google-auth/google-auth.service';
 import type { IAuthRepository } from '../repository/auth.repository.interface';
 import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
 import type { GoogleIdentity } from '../google-auth/google-auth.types';
-import type { ExperimentalSession, IAuthService } from './auth.service.interface';
+import type {
+  AuthSession,
+  GoogleAuthenticationInput,
+  GoogleAuthorization,
+  IAuthService,
+} from './auth.service.interface';
 
 export const EXPERIMENTAL_USER_KEY = 'aluna-demo';
 const GOOGLE_PROVIDER = 'GOOGLE' as const;
 const MAX_USER_CREATION_ATTEMPTS = 32;
+const GOOGLE_AUTH_TRANSACTION_PURPOSE = 'google-auth-transaction';
+
+interface GoogleAuthTransaction {
+  purpose?: unknown;
+  state?: unknown;
+  nonce?: unknown;
+  codeVerifier?: unknown;
+}
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -18,9 +32,10 @@ export class AuthService implements IAuthService {
     @Inject(AUTH_PROVIDER_KEYS.AUTH_REPOSITORY) private readonly repository: IAuthRepository,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly googleAuth: GoogleAuthService,
   ) {}
 
-  async startExperimentalSession(): Promise<ExperimentalSession> {
+  async startExperimentalSession(): Promise<AuthSession> {
     const nodeEnv = this.config.getOrThrow<string>('nodeEnv');
     if (nodeEnv === 'production' || !this.config.getOrThrow<boolean>('experimentalLoginEnabled')) {
       throw new ForbiddenException({
@@ -30,6 +45,46 @@ export class AuthService implements IAuthService {
     }
     const user = await this.repository.findUserByKey(EXPERIMENTAL_USER_KEY);
     if (!user) throw new ServiceUnavailableException('Identidade experimental indisponível');
+    const token = await this.jwt.signAsync({ sub: user.id });
+    return { token, user };
+  }
+
+  async startGoogleAuthorization(): Promise<GoogleAuthorization> {
+    let authorizationRequest;
+    try {
+      authorizationRequest = await this.googleAuth.createAuthorizationUrl();
+    } catch {
+      throw new ServiceUnavailableException('Login Google indisponível');
+    }
+
+    const transactionToken = await this.jwt.signAsync({
+      purpose: GOOGLE_AUTH_TRANSACTION_PURPOSE,
+      state: authorizationRequest.state,
+      nonce: authorizationRequest.nonce,
+      codeVerifier: authorizationRequest.codeVerifier,
+    }, { expiresIn: '10m' });
+
+    return {
+      authorizationUrl: authorizationRequest.authorizationUrl,
+      transactionToken,
+    };
+  }
+
+  async completeGoogleAuthentication(input: GoogleAuthenticationInput): Promise<AuthSession> {
+    const transaction = await this.verifyGoogleTransaction(input.transactionToken);
+    let identity: GoogleIdentity;
+    try {
+      identity = await this.googleAuth.handleCallback({
+        callbackUrl: input.callbackUrl,
+        state: transaction.state,
+        nonce: transaction.nonce,
+        codeVerifier: transaction.codeVerifier,
+      });
+    } catch {
+      throw new UnauthorizedException('Falha ao validar a autenticação Google');
+    }
+
+    const user = await this.resolveGoogleIdentity(identity);
     const token = await this.jwt.signAsync({ sub: user.id });
     return { token, user };
   }
@@ -110,5 +165,42 @@ export class AuthService implements IAuthService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
     return sanitized || undefined;
+  }
+
+  private async verifyGoogleTransaction(transactionToken: string | undefined): Promise<{
+    state: string;
+    nonce: string;
+    codeVerifier: string;
+  }> {
+    if (!transactionToken) throw new UnauthorizedException('Transação de autenticação Google ausente');
+
+    let payload: GoogleAuthTransaction;
+    try {
+      payload = await this.jwt.verifyAsync<GoogleAuthTransaction>(transactionToken, {
+        algorithms: ['HS256'],
+        issuer: this.config.getOrThrow<string>('jwtIssuer'),
+        audience: this.config.getOrThrow<string>('jwtAudience'),
+      });
+    } catch {
+      throw new UnauthorizedException('Transação de autenticação Google inválida');
+    }
+
+    if (
+      payload.purpose !== GOOGLE_AUTH_TRANSACTION_PURPOSE
+      || typeof payload.state !== 'string'
+      || !payload.state
+      || typeof payload.nonce !== 'string'
+      || !payload.nonce
+      || typeof payload.codeVerifier !== 'string'
+      || !payload.codeVerifier
+    ) {
+      throw new UnauthorizedException('Transação de autenticação Google inválida');
+    }
+
+    return {
+      state: payload.state,
+      nonce: payload.nonce,
+      codeVerifier: payload.codeVerifier,
+    };
   }
 }
