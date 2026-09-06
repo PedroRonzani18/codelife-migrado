@@ -1,15 +1,12 @@
 import { authSessionSchema } from '@codelife/contracts/auth';
-import { apiFetch, apiFetchParsed } from '@/shared/http';
+import { apiFetch, apiFetchParsed, apiUrl } from '@/shared/http';
 
 export function getSession() {
   return apiFetchParsed('/auth/me', authSessionSchema);
 }
 
-export function startExperimentalSession() {
-  return apiFetchParsed('/auth/experimental-login', authSessionSchema, {
-    method: 'POST',
-    body: JSON.stringify({}),
-  });
+export function startGoogleLogin(): void {
+  window.location.assign(`${apiUrl}/auth/google`);
 }
 
 export async function logout(): Promise<void> {

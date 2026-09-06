@@ -1,1 +1,1 @@
-export { getSession, logout, startExperimentalSession } from '@/features/auth/services/authService';
+export { getSession, logout, startGoogleLogin } from '@/features/auth/services/authService';
