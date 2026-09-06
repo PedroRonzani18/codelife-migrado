@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const blockedLevelUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000502/slides/00000000-0000-4000-8000-000000000704';
 const firstLevelSecondSlideUrl = '/ilhas/island-3/niveis/00000000-0000-4000-8000-000000000501/slides/00000000-0000-4000-8000-000000000702';
-const apiUrl = process.env.WEB_E2E_API_URL ?? 'http://localhost:3001';
+const apiUrl = process.env.WEB_E2E_API_URL ?? process.env.VITE_API_URL ?? 'http://localhost:3001';
 
 async function captureEvidence(page: import('@playwright/test').Page, testInfo: import('@playwright/test').TestInfo, name: string) {
   const path = testInfo.outputPath(`${name}.png`);
