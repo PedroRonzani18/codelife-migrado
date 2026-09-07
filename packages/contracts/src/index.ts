@@ -5,3 +5,4 @@ export * from './common.js';
 export * from './errors.js';
 export * from './learning.js';
 export * from './progress.js';
+export * from './users.js';

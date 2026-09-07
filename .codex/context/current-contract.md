@@ -7,7 +7,8 @@
 - Autenticação Google real concluída; `ExternalIdentity` existente, sessão local
   JWT + cookie HttpOnly preservada e usuário persistido usado pelo progresso.
 - Incremento atual: gestão mínima de usuários e autorização, com infraestrutura
-  RBAC declarativa no backend e sem endpoints ou UI administrativos.
+  RBAC declarativa no backend e endpoints administrativos de listagem e alteração
+  de papel, sem UI administrativa.
 - Papéis deste incremento: `USER | ADMIN`; autorização usa o papel persistido,
   sem role no JWT.
 - Papel acadêmico: produzir evidência técnica delimitada para o TCC; não
