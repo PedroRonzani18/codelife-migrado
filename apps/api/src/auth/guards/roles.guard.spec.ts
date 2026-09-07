@@ -1,15 +1,15 @@
 import { ForbiddenException, UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
-import type { UserRole } from '@codelife/contracts/auth';
-import type { AuthUser } from '../types/auth-user';
+import type { UserRole } from '@codelife/contracts/users';
+import type { UserRecord } from '../../users/internal/user-record';
 import { RolesGuard } from './roles.guard';
 
-function user(role: UserRole): AuthUser {
+function user(role: UserRole): UserRecord {
   return { id: 'user-id', key: 'user-key', username: 'user', displayName: 'User', role };
 }
 
-function contextFor(currentUser?: AuthUser) {
-  const request: { user?: AuthUser } = { user: currentUser };
+function contextFor(currentUser?: UserRecord) {
+  const request: { user?: UserRecord } = { user: currentUser };
   const context = {
     getHandler: () => function handler() {},
     getClass: () => class Controller {},

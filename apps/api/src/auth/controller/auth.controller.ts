@@ -13,7 +13,7 @@ import { CurrentUser, Public } from '../decorators';
 import { LogoutInputDto } from '../dto';
 import { ExperimentalLoginThrottleGuard } from '../guards/experimental-login-throttle.guard';
 import { AuthService } from '../service/auth.service';
-import type { AuthUser } from '../types/auth-user';
+import type { UserRecord } from '../../users/internal/user-record';
 import {
   ExperimentalLoginEndpoint,
   GetCurrentSessionEndpoint,
@@ -32,7 +32,7 @@ export class AuthController {
 
   @Get('me')
   @GetCurrentSessionEndpoint()
-  me(@CurrentUser() user: AuthUser) {
+  me(@CurrentUser() user: UserRecord) {
     const { key, username, displayName, role } = user;
     return authSessionSchema.parse({ user: { id: key, username, displayName, role } });
   }

@@ -1,4 +1,4 @@
 import type { Request } from 'express';
-import type { AuthUser } from './auth-user';
+import type { UserRecord } from '../../users/internal/user-record';
 
-export type AuthenticatedRequest = Request & { user: AuthUser };
+export type AuthenticatedRequest = Request & { user: UserRecord };

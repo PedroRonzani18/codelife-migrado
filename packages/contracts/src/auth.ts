@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { stableKeySchema } from './common.js';
-
-export const userRoleSchema = z.enum(['USER', 'ADMIN']);
-export type UserRole = z.infer<typeof userRoleSchema>;
+import { userRoleSchema } from './users.js';
 
 export const currentUserSchema = z.object({
   id: stableKeySchema,

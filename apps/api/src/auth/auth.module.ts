@@ -9,14 +9,17 @@ import { AuthService } from './service/auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { ExperimentalLoginThrottleGuard } from './guards/experimental-login-throttle.guard';
 import { GoogleAuthModule } from './google-auth/google-auth.module';
+import { UsersModule } from '../users/users.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { ClearSessionCookieInterceptor, SetSessionCookieInterceptor } from './interceptors/session-cookie.interceptor';
-import { PrismaAuthRepository } from './repository/prisma-auth.repository';
+import { PrismaExternalIdentitiesRepository } from './identity/prisma-external-identities.repository';
+import { PrismaIdentityTransaction } from './identity/prisma-identity-transaction';
 
 @Module({
   imports: [
     GoogleAuthModule,
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -38,7 +41,11 @@ import { PrismaAuthRepository } from './repository/prisma-auth.repository';
   ],
   controllers: [AuthController],
   providers: [
-    { provide: AUTH_PROVIDER_KEYS.AUTH_REPOSITORY, useClass: PrismaAuthRepository },
+    {
+      provide: AUTH_PROVIDER_KEYS.EXTERNAL_IDENTITIES_REPOSITORY,
+      useClass: PrismaExternalIdentitiesRepository,
+    },
+    { provide: AUTH_PROVIDER_KEYS.IDENTITY_TRANSACTION, useClass: PrismaIdentityTransaction },
     AuthService,
     ExperimentalLoginThrottleGuard,
     SetSessionCookieInterceptor,

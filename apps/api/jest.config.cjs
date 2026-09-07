@@ -9,7 +9,8 @@ module.exports = {
     '^@codelife/contracts/(.*)$': '<rootDir>/../../packages/contracts/src/$1.ts',
     '^\\./auth\\.js$': '<rootDir>/../../packages/contracts/src/auth.ts',
     '^\\./common\\.js$': '<rootDir>/../../packages/contracts/src/common.ts',
-    '^\\./learning\\.js$': '<rootDir>/../../packages/contracts/src/learning.ts'
+    '^\\./learning\\.js$': '<rootDir>/../../packages/contracts/src/learning.ts',
+    '^\\./users\\.js$': '<rootDir>/../../packages/contracts/src/users.ts'
   },
   collectCoverageFrom: [
     'src/**/*.ts',

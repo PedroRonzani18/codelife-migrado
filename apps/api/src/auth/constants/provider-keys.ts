@@ -1,5 +1,6 @@
 export const AUTH_PROVIDER_KEYS = {
-  AUTH_REPOSITORY: 'IAuthRepository',
+  EXTERNAL_IDENTITIES_REPOSITORY: 'IExternalIdentitiesRepository',
+  IDENTITY_TRANSACTION: 'IIdentityTransaction',
 } as const;
 
 export type AuthProviderKeys =

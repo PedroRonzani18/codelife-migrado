@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
-import type { UserRole } from '@codelife/contracts/auth';
+import type { UserRole } from '@codelife/contracts/users';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import type { AuthUser } from '../types/auth-user';
+import type { UserRecord } from '../../users/internal/user-record';
 
-type RequestWithOptionalUser = Request & { user?: AuthUser };
+type RequestWithOptionalUser = Request & { user?: UserRecord };
 
 @Injectable()
 export class RolesGuard implements CanActivate {

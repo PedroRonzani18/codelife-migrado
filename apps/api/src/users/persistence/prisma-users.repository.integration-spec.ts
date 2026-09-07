@@ -9,6 +9,7 @@ describe('PrismaUsersRepository (integration)', () => {
   let moduleRef: TestingModule;
   let prisma: PrismaService;
   let repository: IUsersRepository;
+  let secondUserId: string;
   const suffix = randomUUID();
   const users = {
     first: { id: randomUUID(), key: `macro3-repository-first-${suffix}`, username: `macro3-repository-first-${suffix}` },
@@ -20,12 +21,9 @@ describe('PrismaUsersRepository (integration)', () => {
     await moduleRef.init();
     prisma = moduleRef.get(PrismaService);
     repository = moduleRef.get<IUsersRepository>(USERS_PROVIDER_KEYS.USERS_REPOSITORY);
-    await prisma.user.createMany({
-      data: [
-        { ...users.first, displayName: 'Repository First', role: 'USER' },
-        { ...users.second, displayName: 'Repository Second', role: 'USER' },
-      ],
-    });
+    await repository.create({ ...users.first, displayName: 'Repository First' });
+    const second = await repository.create({ ...users.second, displayName: 'Repository Second' });
+    secondUserId = second.id;
   });
 
   afterAll(async () => {
@@ -34,14 +32,15 @@ describe('PrismaUsersRepository (integration)', () => {
   });
 
   it('reads users ordered by username and updates a user by public key', async () => {
-    const listed = (await repository.listUsers()).filter((user) => ([users.first.key, users.second.key] as string[]).includes(user.key));
+    const listed = (await repository.list()).filter((user) => ([users.first.key, users.second.key] as string[]).includes(user.key));
     expect(listed.map((user) => user.key)).toEqual([users.first.key, users.second.key]);
 
-    await expect(repository.findUserByKey(users.second.key)).resolves.toMatchObject({ role: 'USER' });
-    await expect(repository.updateUserRoleByKey(users.second.key, 'ADMIN')).resolves.toMatchObject({
+    await expect(repository.findById(secondUserId)).resolves.toMatchObject({ key: users.second.key, role: 'USER' });
+    await expect(repository.findByKey(users.second.key)).resolves.toMatchObject({ role: 'USER' });
+    await expect(repository.updateRoleByKey(users.second.key, 'ADMIN')).resolves.toMatchObject({
       key: users.second.key,
       role: 'ADMIN',
     });
-    await expect(repository.findUserByKey(users.second.key)).resolves.toMatchObject({ role: 'ADMIN' });
+    await expect(repository.findByKey(users.second.key)).resolves.toMatchObject({ role: 'ADMIN' });
   });
 });

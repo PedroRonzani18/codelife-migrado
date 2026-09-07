@@ -1,6 +1,6 @@
-import type { UserRole } from '@codelife/contracts/auth';
+import type { UserRole } from '@codelife/contracts/users';
 
-export interface AuthUser {
+export interface UserRecord {
   id: string;
   key: string;
   username: string;

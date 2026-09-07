@@ -9,9 +9,11 @@ const records: UserRecord[] = [
 
 function setup() {
   const repository: jest.Mocked<IUsersRepository> = {
-    listUsers: jest.fn().mockResolvedValue(records),
-    findUserByKey: jest.fn(),
-    updateUserRoleByKey: jest.fn(),
+    findById: jest.fn(),
+    findByKey: jest.fn(),
+    list: jest.fn().mockResolvedValue(records),
+    create: jest.fn(),
+    updateRoleByKey: jest.fn(),
   };
   return { repository, service: new UserManagementService(repository) };
 }
@@ -28,8 +30,8 @@ describe('UserManagementService', () => {
 
   it('promotes and demotes a different user', async () => {
     const { repository, service } = setup();
-    repository.findUserByKey.mockResolvedValue(records[1]);
-    repository.updateUserRoleByKey.mockResolvedValue({ ...records[1], role: 'ADMIN' });
+    repository.findByKey.mockResolvedValue(records[1]);
+    repository.updateRoleByKey.mockResolvedValue({ ...records[1], role: 'ADMIN' });
 
     await expect(service.updateRole(records[0].id, records[1].key, { role: 'ADMIN' })).resolves.toEqual({
       id: 'user-key',
@@ -37,23 +39,23 @@ describe('UserManagementService', () => {
       displayName: 'User Name',
       role: 'ADMIN',
     });
-    expect(repository.updateUserRoleByKey).toHaveBeenCalledWith('user-key', 'ADMIN');
+    expect(repository.updateRoleByKey).toHaveBeenCalledWith('user-key', 'ADMIN');
   });
 
   it('rejects self-demotion before updating persistence', async () => {
     const { repository, service } = setup();
-    repository.findUserByKey.mockResolvedValue(records[0]);
+    repository.findByKey.mockResolvedValue(records[0]);
 
     await expect(service.updateRole(records[0].id, records[0].key, { role: 'USER' })).rejects.toBeInstanceOf(ForbiddenException);
-    expect(repository.updateUserRoleByKey).not.toHaveBeenCalled();
+    expect(repository.updateRoleByKey).not.toHaveBeenCalled();
   });
 
   it('rejects a missing target and keeps invalid input away from persistence', async () => {
     const { repository, service } = setup();
-    repository.findUserByKey.mockResolvedValue(null);
+    repository.findByKey.mockResolvedValue(null);
     await expect(service.updateRole('actor-id', 'missing-key', { role: 'ADMIN' })).rejects.toBeInstanceOf(NotFoundException);
 
     await expect(service.updateRole('actor-id', 'missing-key', { role: 'INVALID' } as never)).rejects.toBeInstanceOf(BadRequestException);
-    expect(repository.findUserByKey).toHaveBeenCalledTimes(1);
+    expect(repository.findByKey).toHaveBeenCalledTimes(1);
   });
 });

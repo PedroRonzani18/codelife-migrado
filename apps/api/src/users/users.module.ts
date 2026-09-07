@@ -10,5 +10,6 @@ import { UserManagementService } from './management/user-management.service';
     { provide: USERS_PROVIDER_KEYS.USERS_REPOSITORY, useClass: PrismaUsersRepository },
     UserManagementService,
   ],
+  exports: [USERS_PROVIDER_KEYS.USERS_REPOSITORY],
 })
 export class UsersModule {}

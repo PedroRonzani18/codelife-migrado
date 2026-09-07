@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, Matches } from 'class-validator';
-import type { UserRole } from '@codelife/contracts/auth';
+import type { UserRole } from '@codelife/contracts/users';
 
 const stableKeyPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const userRoles = ['USER', 'ADMIN'] as const;

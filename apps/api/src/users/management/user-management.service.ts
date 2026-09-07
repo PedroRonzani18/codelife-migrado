@@ -7,7 +7,8 @@ import {
   type UpdateUserRoleInput,
 } from '@codelife/contracts/users';
 import { USERS_PROVIDER_KEYS } from '../constants';
-import type { IUsersRepository, UserRecord } from '../persistence/users.repository.interface';
+import type { UserRecord } from '../internal/user-record';
+import type { IUsersRepository } from '../persistence/users.repository.interface';
 
 function toAdminUser(user: UserRecord): AdminUser {
   return adminUserSchema.parse({
@@ -26,7 +27,7 @@ export class UserManagementService {
   ) {}
 
   async list(): Promise<AdminUser[]> {
-    return adminUsersSchema.parse((await this.repository.listUsers()).map(toAdminUser));
+    return adminUsersSchema.parse((await this.repository.list()).map(toAdminUser));
   }
 
   async updateRole(actorId: string, userKey: string, input: UpdateUserRoleInput): Promise<AdminUser> {
@@ -35,7 +36,7 @@ export class UserManagementService {
       throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'Payload inválido' });
     }
 
-    const target = await this.repository.findUserByKey(userKey);
+    const target = await this.repository.findByKey(userKey);
     if (!target) throw new NotFoundException('Usuário não encontrado');
     if (target.id === actorId && target.role === 'ADMIN' && parsed.data.role === 'USER') {
       throw new ForbiddenException({
@@ -44,7 +45,7 @@ export class UserManagementService {
       });
     }
 
-    const updated = await this.repository.updateUserRoleByKey(userKey, parsed.data.role);
+    const updated = await this.repository.updateRoleByKey(userKey, parsed.data.role);
     if (!updated) throw new NotFoundException('Usuário não encontrado');
     return toAdminUser(updated);
   }

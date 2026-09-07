@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { UserRole } from '@codelife/contracts/auth';
+import type { UserRole } from '@codelife/contracts/users';
 
 const userRoles = ['USER', 'ADMIN'] as const;
 
