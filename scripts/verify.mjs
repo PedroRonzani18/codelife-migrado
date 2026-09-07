@@ -43,6 +43,7 @@ const tcc14FoundationMigration = readFileSync('apps/api/prisma/migrations/202608
 const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/20260819000000_harden_persistence/migration.sql', 'utf8');
 const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
 const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
+const userRoleMigration = readFileSync('apps/api/prisma/migrations/20260906000000_tcc30_user_roles/migration.sql', 'utf8');
 
 const tcc14FixtureSql = `
 INSERT INTO "User" ("id", "key", "username", "displayName", "createdAt", "updatedAt")
@@ -84,12 +85,16 @@ function validateTcc15UpgradeScenarios(env) {
   prepareTcc14Database(upgradeDatabase, false);
   psql(upgradeDatabase, tcc15Migration);
   psql(upgradeDatabase, directHierarchyMigration);
+  psql(upgradeDatabase, userRoleMigration);
   runPnpm(['--filter', 'api', 'prisma:seed'], { env: { ...env, DATABASE_URL: databaseUrl(upgradeDatabase) } });
   if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island";') !== '1'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '3'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '9'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "MediaAsset";') !== '3') {
     throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 3 × 9 hierarchy');
+  }
+  if (scalar(upgradeDatabase, 'SELECT "role" FROM "User" WHERE "key" = \'aluna-demo\';') !== 'USER') {
+    throw new Error('TCC-30 migration did not assign USER to the existing user');
   }
   expectPsqlFailure(
     upgradeDatabase,

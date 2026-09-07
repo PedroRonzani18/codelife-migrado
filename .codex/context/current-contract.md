@@ -2,10 +2,13 @@
 
 ## Estado
 
-- Card vigente: TCC-15.
+- Card vigente: TCC-30.
 - Recorte: jornada autenticada da `island-3`, com três níveis e nove slides.
-- Estado técnico: macroetapas 1 a 3 concluídas; a macroetapa 4 aguarda apenas
-  o roteiro humano final descrito no roadmap.
+- Autenticação Google real concluída; `ExternalIdentity` existente, sessão local
+  JWT + cookie HttpOnly preservada e usuário persistido usado pelo progresso.
+- Incremento atual: gestão mínima de usuários e autorização, preparando o
+  modelo e os contratos sem endpoints ou UI administrativos.
+- Papéis planejados neste incremento: `USER | ADMIN`.
 - Papel acadêmico: produzir evidência técnica delimitada para o TCC; não
   modernizar o CodeLife inteiro nem alegar eficácia pedagógica ou validação
   universal.
