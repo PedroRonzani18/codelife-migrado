@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { stableKeySchema } from './common.js';
+import { userRoleSchema } from './users.js';
 
 export const currentUserSchema = z.object({
   id: stableKeySchema,
   username: z.string().min(1),
   displayName: z.string().min(1),
+  role: userRoleSchema,
 });
 export type CurrentUser = z.infer<typeof currentUserSchema>;
 

@@ -1,9 +1,8 @@
-import { Body, Controller, Get, Inject, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { authSessionSchema } from '@codelife/contracts/auth';
-import { AUTH_PROVIDER_KEYS } from '../constants';
 import {
   clearGoogleAuthTransactionCookieOptions,
   GOOGLE_AUTH_TRANSACTION_COOKIE,
@@ -13,8 +12,8 @@ import {
 import { CurrentUser, Public } from '../decorators';
 import { LogoutInputDto } from '../dto';
 import { ExperimentalLoginThrottleGuard } from '../guards/experimental-login-throttle.guard';
-import type { AuthUser } from '../repository/auth.repository.interface';
-import type { IAuthService } from '../service/auth.service.interface';
+import { AuthService } from '../service/auth.service';
+import type { UserRecord } from '../../users/internal/user-record';
 import {
   ExperimentalLoginEndpoint,
   GetCurrentSessionEndpoint,
@@ -27,16 +26,15 @@ import {
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject(AUTH_PROVIDER_KEYS.AUTH_SERVICE)
-    private readonly auth: IAuthService,
+    private readonly auth: AuthService,
     private readonly config: ConfigService,
   ) {}
 
   @Get('me')
   @GetCurrentSessionEndpoint()
-  me(@CurrentUser() user: AuthUser) {
-    const { key, username, displayName } = user;
-    return authSessionSchema.parse({ user: { id: key, username, displayName } });
+  me(@CurrentUser() user: UserRecord) {
+    const { key, username, displayName, role } = user;
+    return authSessionSchema.parse({ user: { id: key, username, displayName, role } });
   }
 
   @Public()

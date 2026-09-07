@@ -8,6 +8,7 @@ Execute os comandos a partir da raiz, com Node 24 e pnpm 11.22.0.
 | `pnpm dev` | Inicia API e web pelo Turborepo. |
 | `pnpm db:up` / `db:down` | Sobe ou encerra somente o PostgreSQL local em `localhost:5434`. |
 | `pnpm db:migrate` / `db:seed` | Aplica migrations e fixture no `DATABASE_URL` local configurado. Confira a URL antes de executar. |
+| `pnpm users:promote-admin --key <user-key>` | Promove explicitamente o usuário identificado pela chave pública a `ADMIN`; não há alvo padrão nem regra de email em runtime. |
 | `pnpm lint`, `typecheck`, `test`, `build` | Gates individuais dos workspaces. |
 | `pnpm test:api:cov` | Testes unitários da API com threshold global mínimo de 80%. |
 | `pnpm check` | Gate sem Docker: geração Prisma, lint, tipos, testes unitários e build. |

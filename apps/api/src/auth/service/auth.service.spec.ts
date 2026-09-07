@@ -2,37 +2,76 @@ import { ForbiddenException, ServiceUnavailableException, UnauthorizedException 
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
 import type { GoogleAuthService } from '../google-auth/google-auth.service';
-import type { IAuthRepository } from '../repository/auth.repository.interface';
-import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
+import type { IUsersRepository } from '../../users/repository/users.repository.interface';
+import type { UserRecord } from '../../users/internal/user-record';
+import type { ExternalIdentityRecord, IExternalIdentitiesRepository } from '../identity/external-identities.repository.interface';
+import type { IdentityTransactionRepositories, IIdentityTransaction } from '../identity/identity-transaction.interface';
+import { UniqueConstraintViolationError } from '@/prisma/errors/unique-constraint-violation.error';
 import { AuthService, EXPERIMENTAL_USER_KEY } from './auth.service';
 
 describe('AuthService', () => {
-  const user = { id: 'db-user-1', key: EXPERIMENTAL_USER_KEY, username: 'aluna.demo', displayName: 'Aluna Demo' };
-  let repository: jest.Mocked<IAuthRepository>;
+  const user: UserRecord = {
+    id: 'db-user-1',
+    key: EXPERIMENTAL_USER_KEY,
+    username: 'aluna.demo',
+    displayName: 'Aluna Demo',
+    role: 'USER',
+  };
+  let usersRepository: jest.Mocked<IUsersRepository>;
+  let externalIdentitiesRepository: jest.Mocked<IExternalIdentitiesRepository>;
+  let identityTransaction: jest.Mocked<IIdentityTransaction>;
   let jwt: { signAsync: jest.Mock; verifyAsync: jest.Mock };
   let googleAuth: { createAuthorizationUrl: jest.Mock; handleCallback: jest.Mock };
   let values: Record<string, unknown>;
   let service: AuthService;
 
-  beforeEach(() => {
-    repository = {
-      findUserById: jest.fn(),
-      findUserByKey: jest.fn(),
-      findUserByExternalIdentity: jest.fn(),
-      createUserWithExternalIdentity: jest.fn(),
+  function externalIdentity(userId: string, subject = 'google-subject'): ExternalIdentityRecord {
+    return {
+      id: 'external-identity-1',
+      provider: 'GOOGLE',
+      subject,
+      userId,
+      email: null,
+      emailVerified: null,
     };
+  }
+
+  beforeEach(() => {
+    usersRepository = {
+      findById: jest.fn(),
+      findByKey: jest.fn(),
+      list: jest.fn(),
+      create: jest.fn(),
+      updateRoleByKey: jest.fn(),
+    };
+    externalIdentitiesRepository = {
+      findByProviderAndSubject: jest.fn().mockResolvedValue(null),
+      create: jest.fn(),
+    };
+    identityTransaction = { run: jest.fn() } as unknown as jest.Mocked<IIdentityTransaction>;
+    identityTransaction.run.mockImplementation(async (operation) => operation({
+      users: usersRepository,
+      externalIdentities: externalIdentitiesRepository,
+    } satisfies IdentityTransactionRepositories));
     jwt = { signAsync: jest.fn(), verifyAsync: jest.fn() };
     googleAuth = { createAuthorizationUrl: jest.fn(), handleCallback: jest.fn() };
     values = { nodeEnv: 'test', experimentalLoginEnabled: true, jwtIssuer: 'codelife-api', jwtAudience: 'codelife-web' };
     const config = { getOrThrow: (key: string) => values[key] } as unknown as ConfigService;
-    service = new AuthService(repository, jwt as unknown as JwtService, config, googleAuth as unknown as GoogleAuthService);
+    service = new AuthService(
+      usersRepository,
+      externalIdentitiesRepository,
+      identityTransaction,
+      jwt as unknown as JwtService,
+      config,
+      googleAuth as unknown as GoogleAuthService,
+    );
   });
 
   it('issues a session only for the fixed seed user', async () => {
-    repository.findUserByKey.mockResolvedValue(user);
+    usersRepository.findByKey.mockResolvedValue(user);
     jwt.signAsync.mockResolvedValue('signed-token');
     await expect(service.startExperimentalSession()).resolves.toEqual({ token: 'signed-token', user });
-    expect(repository.findUserByKey).toHaveBeenCalledWith(EXPERIMENTAL_USER_KEY);
+    expect(usersRepository.findByKey).toHaveBeenCalledWith(EXPERIMENTAL_USER_KEY);
     expect(jwt.signAsync).toHaveBeenCalledWith({ sub: user.id });
   });
 
@@ -45,7 +84,7 @@ describe('AuthService', () => {
   });
 
   it('fails safely when the fixture identity is absent', async () => {
-    repository.findUserByKey.mockResolvedValue(null);
+    usersRepository.findByKey.mockResolvedValue(null);
     await expect(service.startExperimentalSession()).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
@@ -84,11 +123,9 @@ describe('AuthService', () => {
       nonce: 'nonce',
       codeVerifier: 'verifier',
     });
-    googleAuth.handleCallback.mockResolvedValue({
-      subject: 'google-subject',
-      displayName: 'Person Example',
-    });
-    repository.findUserByExternalIdentity.mockResolvedValue(user);
+    googleAuth.handleCallback.mockResolvedValue({ subject: 'google-subject', displayName: 'Person Example' });
+    externalIdentitiesRepository.findByProviderAndSubject.mockResolvedValue(externalIdentity(user.id));
+    usersRepository.findById.mockResolvedValue(user);
     jwt.signAsync.mockResolvedValue('session-token');
 
     await expect(service.completeGoogleAuthentication({
@@ -106,6 +143,8 @@ describe('AuthService', () => {
       nonce: 'nonce',
       codeVerifier: 'verifier',
     });
+    expect(externalIdentitiesRepository.findByProviderAndSubject).toHaveBeenCalledWith('GOOGLE', 'google-subject');
+    expect(usersRepository.findById).toHaveBeenCalledWith(user.id);
     expect(jwt.signAsync).toHaveBeenCalledWith({ sub: user.id });
   });
 
@@ -115,12 +154,7 @@ describe('AuthService', () => {
       .rejects.toBeInstanceOf(UnauthorizedException);
     expect(googleAuth.handleCallback).not.toHaveBeenCalled();
 
-    jwt.verifyAsync.mockResolvedValue({
-      purpose: 'google-auth-transaction',
-      state: 'state',
-      nonce: 'nonce',
-      codeVerifier: 'verifier',
-    });
+    jwt.verifyAsync.mockResolvedValue({ purpose: 'google-auth-transaction', state: 'state', nonce: 'nonce', codeVerifier: 'verifier' });
     googleAuth.handleCallback.mockRejectedValue(new Error('provider rejected callback'));
     await expect(service.completeGoogleAuthentication({
       callbackUrl: 'http://localhost:3001/auth/google/callback',
@@ -129,8 +163,9 @@ describe('AuthService', () => {
     expect(jwt.signAsync).not.toHaveBeenCalled();
   });
 
-  it('resolves an existing Google identity without creating another user', async () => {
-    repository.findUserByExternalIdentity.mockResolvedValue(user);
+  it('looks up an existing external identity and then its User', async () => {
+    externalIdentitiesRepository.findByProviderAndSubject.mockResolvedValue(externalIdentity(user.id));
+    usersRepository.findById.mockResolvedValue(user);
 
     await expect(service.resolveGoogleIdentity({
       subject: 'google-subject',
@@ -138,18 +173,30 @@ describe('AuthService', () => {
       email: 'pedro@example.com',
     })).resolves.toBe(user);
 
-    expect(repository.createUserWithExternalIdentity).not.toHaveBeenCalled();
+    expect(externalIdentitiesRepository.findByProviderAndSubject).toHaveBeenCalledWith('GOOGLE', 'google-subject');
+    expect(usersRepository.findById).toHaveBeenCalledWith(user.id);
+    expect(usersRepository.create).not.toHaveBeenCalled();
+    expect(identityTransaction.run).not.toHaveBeenCalled();
   });
 
-  it('creates a Google user with a stable-independent key and normalized username', async () => {
-    const createdUser = {
+  it('fails explicitly when an external identity points to an absent User', async () => {
+    externalIdentitiesRepository.findByProviderAndSubject.mockResolvedValue(externalIdentity('missing-user'));
+    usersRepository.findById.mockResolvedValue(null);
+
+    await expect(service.resolveGoogleIdentity({ subject: 'google-subject', displayName: 'Person' }))
+      .rejects.toThrow('external identity user is absent');
+  });
+
+  it('creates User and ExternalIdentity through one transaction', async () => {
+    const createdUser: UserRecord = {
       id: 'db-user-2',
       key: 'generated-key',
       username: 'pedro-augusto-ronzani',
       displayName: 'Pedro Augusto Ronzani',
+      role: 'USER',
     };
-    repository.findUserByExternalIdentity.mockResolvedValue(null);
-    repository.createUserWithExternalIdentity.mockResolvedValue(createdUser);
+    usersRepository.create.mockResolvedValue(createdUser);
+    externalIdentitiesRepository.create.mockResolvedValue(externalIdentity(createdUser.id));
 
     await expect(service.resolveGoogleIdentity({
       subject: 'google-subject',
@@ -158,60 +205,78 @@ describe('AuthService', () => {
       emailVerified: true,
     })).resolves.toBe(createdUser);
 
-    expect(repository.createUserWithExternalIdentity).toHaveBeenCalledWith(expect.objectContaining({
-      provider: 'GOOGLE',
-      subject: 'google-subject',
+    expect(identityTransaction.run).toHaveBeenCalledTimes(1);
+    expect(usersRepository.create).toHaveBeenCalledWith({
+      key: expect.any(String),
       username: 'pedro-augusto-ronzani',
       displayName: 'Pedro Augusto Ronzani',
+    });
+    expect(externalIdentitiesRepository.create).toHaveBeenCalledWith({
+      provider: 'GOOGLE',
+      subject: 'google-subject',
       email: 'pedro@example.com',
       emailVerified: true,
-      key: expect.any(String),
-    }));
-    const input = repository.createUserWithExternalIdentity.mock.calls[0][0];
-    expect(input.key).not.toBe(input.username);
-    expect(input.key).not.toContain(input.subject);
-    expect(input.key).not.toContain(input.email ?? '');
+      userId: createdUser.id,
+    });
+    expect(usersRepository.create.mock.invocationCallOrder[0]).toBeLessThan(
+      externalIdentitiesRepository.create.mock.invocationCallOrder[0],
+    );
   });
 
   it('uses email and then a generic base when display name is unavailable', async () => {
-    repository.findUserByExternalIdentity.mockResolvedValue(null);
-    repository.createUserWithExternalIdentity
+    usersRepository.create
       .mockResolvedValueOnce({ ...user, username: 'person-example-com' })
       .mockResolvedValueOnce({ ...user, username: 'user' });
+    externalIdentitiesRepository.create.mockResolvedValue(externalIdentity(user.id));
 
     await service.resolveGoogleIdentity({ subject: 'google-a', email: 'person@example.com' });
     await service.resolveGoogleIdentity({ subject: 'google-b' });
 
-    expect(repository.createUserWithExternalIdentity.mock.calls[0][0].username).toBe('person-example-com');
-    expect(repository.createUserWithExternalIdentity.mock.calls[1][0].username).toBe('user');
+    expect(usersRepository.create.mock.calls[0][0].username).toBe('person-example-com');
+    expect(usersRepository.create.mock.calls[1][0].username).toBe('user');
   });
 
-  it('adds a suffix after a username collision', async () => {
-    const firstUser = { ...user, id: 'db-user-3', username: 'pedro-augusto-ronzani' };
-    repository.findUserByExternalIdentity
+  it('retries with a suffix after a unique conflict and rechecks the external identity', async () => {
+    const firstUser: UserRecord = { ...user, id: 'db-user-3', username: 'pedro-augusto-ronzani' };
+    externalIdentitiesRepository.findByProviderAndSubject
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(firstUser);
-    repository.createUserWithExternalIdentity
+      .mockResolvedValueOnce(externalIdentity(firstUser.id));
+    usersRepository.create
       .mockRejectedValueOnce(new UniqueConstraintViolationError())
       .mockResolvedValueOnce(firstUser);
+    externalIdentitiesRepository.create.mockResolvedValue(externalIdentity(firstUser.id));
 
-    await expect(service.resolveGoogleIdentity({
-      subject: 'google-subject',
-      displayName: 'Pedro Augusto Ronzani',
-    })).resolves.toBe(firstUser);
+    await expect(service.resolveGoogleIdentity({ subject: 'google-subject', displayName: 'Pedro Augusto Ronzani' }))
+      .resolves.toBe(firstUser);
 
-    expect(repository.createUserWithExternalIdentity.mock.calls[0][0].username).toBe('pedro-augusto-ronzani');
-    expect(repository.createUserWithExternalIdentity.mock.calls[1][0].username).toBe('pedro-augusto-ronzani-2');
+    expect(usersRepository.create.mock.calls[0][0].username).toBe('pedro-augusto-ronzani');
+    expect(usersRepository.create.mock.calls[1][0].username).toBe('pedro-augusto-ronzani-2');
+  });
+
+  it('returns the concurrently provisioned User when the identity conflict is observed', async () => {
+    const concurrentlyCreatedUser: UserRecord = { ...user, id: 'db-user-race' };
+    externalIdentitiesRepository.findByProviderAndSubject
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(externalIdentity(concurrentlyCreatedUser.id));
+    usersRepository.create.mockRejectedValue(new UniqueConstraintViolationError());
+    usersRepository.findById.mockResolvedValue(concurrentlyCreatedUser);
+
+    await expect(service.resolveGoogleIdentity({ subject: 'google-subject', displayName: 'Person' }))
+      .resolves.toBe(concurrentlyCreatedUser);
+
+    expect(usersRepository.create).toHaveBeenCalledTimes(1);
+    expect(identityTransaction.run).toHaveBeenCalledTimes(1);
+    expect(usersRepository.findById).toHaveBeenCalledWith(concurrentlyCreatedUser.id);
   });
 
   it('resolves a valid JWT session and keeps database errors observable', async () => {
     jwt.verifyAsync.mockResolvedValue({ sub: user.id });
-    repository.findUserById.mockResolvedValue(user);
+    usersRepository.findById.mockResolvedValue(user);
     await expect(service.resolveSession('token')).resolves.toEqual(user);
     expect(jwt.verifyAsync).toHaveBeenCalledWith('token', expect.objectContaining({ algorithms: ['HS256'] }));
 
-    repository.findUserById.mockRejectedValue(new Error('database offline'));
+    usersRepository.findById.mockRejectedValue(new Error('database offline'));
     await expect(service.resolveSession('token')).rejects.toThrow('database offline');
   });
 
@@ -223,7 +288,7 @@ describe('AuthService', () => {
     await expect(service.resolveSession('token')).rejects.toBeInstanceOf(UnauthorizedException);
 
     jwt.verifyAsync.mockResolvedValue({ sub: user.id });
-    repository.findUserById.mockResolvedValue(null);
+    usersRepository.findById.mockResolvedValue(null);
     await expect(service.resolveSession('token')).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

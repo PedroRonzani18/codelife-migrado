@@ -136,6 +136,8 @@ describe('Google identity and learning progress (integration)', () => {
     );
     const firstIdentity = await userForSubject(identities.first.subject);
     expect(firstSessionResponse.user.id).toBe(firstIdentity.user.key);
+    expect(firstSessionResponse.user.role).toBe('USER');
+    expect(firstIdentity.user.role).toBe('USER');
 
     await request(app.getHttpServer())
       .post(`/progress/levels/${fixtureIds.levels[0]}/start`)
@@ -189,6 +191,7 @@ describe('Google identity and learning progress (integration)', () => {
       .expect(200);
 
     const secondIdentity = await userForSubject(identities.second.subject);
+    expect(secondIdentity.user.role).toBe('USER');
     const firstProgress = await prisma.userLevelProgress.findFirstOrThrow({
       where: {
         levelId: fixtureIds.levels[0],

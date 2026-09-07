@@ -7,3 +7,8 @@ enum SlideType {
 enum IdentityProvider {
   GOOGLE
 }
+
+enum UserRole {
+  USER
+  ADMIN
+}

@@ -3,6 +3,7 @@ model User {
   key                String               @unique
   username           String               @unique
   displayName        String
+  role               UserRole             @default(USER)
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   islandProgress     UserIslandProgress[]

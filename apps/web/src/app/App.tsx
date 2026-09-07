@@ -7,6 +7,7 @@ import { LoadingState, PageContainer, RouteErrorState } from '@/shared/component
 import { GoogleLogin } from '@/features/auth/GoogleLogin';
 import { SessionHeader } from '@/features/auth/components/SessionHeader';
 import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
+import { AdminRoute, AdminUsersView } from '@/features/admin-users';
 import { startGoogleLogin, useSessionMutations, useSessionQuery } from '@/features/auth';
 import IslandView from '@/modules/learning/views/IslandView';
 import LevelReaderView from '@/modules/learning/views/LevelReaderView';
@@ -48,6 +49,11 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route path="/ilhas/:islandSlug" element={<IslandView />} />
           <Route path="/ilhas/:islandSlug/niveis/:levelId/slides/:slideId" element={<LevelReaderView />} />
+        </Route>
+        <Route element={<AdminRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="/admin/users" element={<AdminUsersView />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<PageContainer><RouteErrorState title="Página não encontrada" description="O endereço solicitado não pertence à jornada experimental." /></PageContainer>} />

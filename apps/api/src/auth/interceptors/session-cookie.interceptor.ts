@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { map, type Observable } from 'rxjs';
 import { authSessionSchema } from '@codelife/contracts/auth';
 import { clearSessionCookieOptions, sessionCookieOptions } from '../cookies/auth-cookie';
-import type { AuthSession } from '../service/auth.service.interface';
+import type { AuthSession } from '../service/auth.service';
 
 @Injectable()
 export class SetSessionCookieInterceptor implements NestInterceptor<AuthSession, ReturnType<typeof authSessionSchema.parse>> {
@@ -14,7 +14,7 @@ export class SetSessionCookieInterceptor implements NestInterceptor<AuthSession,
     const response = context.switchToHttp().getResponse<Response>();
     return next.handle().pipe(map(({ token, user }) => {
       response.cookie(this.config.getOrThrow<string>('cookieName'), token, sessionCookieOptions(this.config));
-      return authSessionSchema.parse({ user: { id: user.key, username: user.username, displayName: user.displayName } });
+      return authSessionSchema.parse({ user: { id: user.key, username: user.username, displayName: user.displayName, role: user.role } });
     }));
   }
 }

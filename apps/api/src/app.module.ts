@@ -7,6 +7,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { AuthModule } from '@/auth/auth.module';
 import { HealthModule } from '@/health/health.module';
 import { LearningModule } from '@/learning/learning.module';
+import { UsersModule } from '@/users/users.module';
 
 loadEnvironment({ path: resolve(__dirname, '../.env'), override: false });
 
@@ -21,6 +22,7 @@ loadEnvironment({ path: resolve(__dirname, '../.env'), override: false });
     AuthModule,
     HealthModule,
     LearningModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

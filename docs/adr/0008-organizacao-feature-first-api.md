@@ -10,8 +10,9 @@ distintas na mesma pasta.
 **Decisão.** Manter módulos de negócio e infraestrutura como fronteiras de
 primeiro nível. Dentro de módulos que reúnam mais de uma capacidade, organizar
 o código primeiro por funcionalidade e manter controller, service, repository
-e testes próximos. A leitura de ilha passa a ocupar `learning/islands`; futuras
-operações de progresso devem ocupar `learning/progress`. Em `auth`, guards,
+e testes próximos. As capacidades atuais ocupam `learning/islands`,
+`learning/levels`, `learning/progress` e `learning/media`; não há necessidade de
+um módulo Nest separado para cada uma. Em `auth`, guards,
 decorators, tipos HTTP e opções de cookie ficam agrupados por responsabilidade.
 Em `common`, elementos do protocolo HTTP ficam separados da instrumentação de
 requisições. Pastas adicionais por camada técnica só devem ser criadas quando
@@ -28,6 +29,7 @@ recorte atual.
 rotas, contratos, injeção de dependência ou persistência. `LearningModule`
 permanece como composição do domínio de aprendizagem, e `AuthModule` continua
 dono das políticas globais de autenticação. `HealthModule` e `PrismaModule`
-permanecem planos enquanto tiverem poucos artefatos. Uma funcionalidade poderá
-ser promovida a módulo Nest próprio quando precisar de imports, exports ou
-ciclo de vida independentes.
+permanecem planos enquanto tiverem poucos artefatos. Pastas globais por camada
+técnica não são desejáveis; uma funcionalidade poderá ser promovida a módulo
+Nest próprio somente quando precisar de imports, exports ou ciclo de vida
+independentes.

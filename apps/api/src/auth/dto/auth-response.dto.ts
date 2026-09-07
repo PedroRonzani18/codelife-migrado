@@ -9,6 +9,9 @@ export class AuthUserResponseDto {
 
   @ApiProperty({ example: 'Aluna Demo' })
   displayName!: string;
+
+  @ApiProperty({ enum: ['USER', 'ADMIN'], example: 'USER' })
+  role!: 'USER' | 'ADMIN';
 }
 
 export class AuthSessionResponseDto {

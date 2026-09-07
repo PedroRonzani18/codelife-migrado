@@ -43,6 +43,13 @@ const tcc14FoundationMigration = readFileSync('apps/api/prisma/migrations/202608
 const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/20260819000000_harden_persistence/migration.sql', 'utf8');
 const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
 const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
+const userRoleMigration = readFileSync('apps/api/prisma/migrations/20260906000000_tcc30_user_roles/migration.sql', 'utf8');
+const macro5E2eUser = {
+  id: '00000000-0000-4000-8000-000000002201',
+  key: 'macro5-e2e-user',
+  username: 'macro5.e2e.user',
+  displayName: 'Macro 5 E2E User',
+};
 
 const tcc14FixtureSql = `
 INSERT INTO "User" ("id", "key", "username", "displayName", "createdAt", "updatedAt")
@@ -79,17 +86,28 @@ function expectPsqlFailure(database, sql, expectedMessage) {
   }
 }
 
+function prepareMacro5E2eUser() {
+  psql('codelife_test', `
+    INSERT INTO "User" ("id", "key", "username", "displayName", "role", "createdAt", "updatedAt")
+    VALUES ('${macro5E2eUser.id}', '${macro5E2eUser.key}', '${macro5E2eUser.username}', '${macro5E2eUser.displayName}', 'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  `);
+}
+
 function validateTcc15UpgradeScenarios(env) {
   const upgradeDatabase = 'codelife_upgrade_empty';
   prepareTcc14Database(upgradeDatabase, false);
   psql(upgradeDatabase, tcc15Migration);
   psql(upgradeDatabase, directHierarchyMigration);
+  psql(upgradeDatabase, userRoleMigration);
   runPnpm(['--filter', 'api', 'prisma:seed'], { env: { ...env, DATABASE_URL: databaseUrl(upgradeDatabase) } });
   if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island";') !== '1'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '3'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '9'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "MediaAsset";') !== '3') {
     throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 3 × 9 hierarchy');
+  }
+  if (scalar(upgradeDatabase, 'SELECT "role" FROM "User" WHERE "key" = \'aluna-demo\';') !== 'USER') {
+    throw new Error('TCC-30 migration did not assign USER to the existing user');
   }
   expectPsqlFailure(
     upgradeDatabase,
@@ -202,6 +220,8 @@ try {
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });
   runPnpm(['check'], { env });
   runPnpm(['test:api:integration'], { env });
+  runPnpm(['--filter', 'api', 'users:promote-admin', '--key', 'aluna-demo'], { env });
+  prepareMacro5E2eUser();
   api = spawn('pnpm', ['--filter', 'api', 'exec', 'node', 'dist/main.js'], { env, stdio: 'inherit' });
   await waitForUrl(`${apiUrl}/health/ready`, api, 'API');
   web = spawn('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', String(webPort), '--strictPort'], { env, stdio: 'inherit' });

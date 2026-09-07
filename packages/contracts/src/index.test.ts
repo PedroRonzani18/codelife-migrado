@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   apiErrorCodeSchema,
   apiErrorSchema,
+  adminUserSchema,
+  adminUsersSchema,
+  authSessionSchema,
   completeLevelInputSchema,
   islandDetailSchema,
   levelDetailSchema,
@@ -10,6 +13,8 @@ import {
   stableKeySchema,
   startLevelInputSchema,
   updateCurrentSlideInputSchema,
+  updateUserRoleInputSchema,
+  userRoleSchema,
   uuidSchema,
 } from './index.js';
 
@@ -24,6 +29,23 @@ const level = { id: ids.level, title: 'Variáveis', position: 1, availability: '
 const slide = { id: ids.slide, title: 'Texto', position: 1, previousSlideId: null, nextSlideId: null, type: 'TextText' as const, primaryText: 'Conteúdo', secondaryText: null };
 
 describe('shared contracts', () => {
+  it('models the current user role explicitly', () => {
+    expect(userRoleSchema.parse('USER')).toBe('USER');
+    expect(userRoleSchema.safeParse('SUPERUSER').success).toBe(false);
+    expect(authSessionSchema.parse({ user: { id: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' } })).toMatchObject({
+      user: { role: 'USER' },
+    });
+  });
+
+  it('models the minimal administrative user contract and strict role command', () => {
+    const user = { id: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' as const };
+    expect(adminUserSchema.parse(user)).toEqual(user);
+    expect(adminUsersSchema.parse([user])).toEqual([user]);
+    expect(updateUserRoleInputSchema.parse({ role: 'ADMIN' })).toEqual({ role: 'ADMIN' });
+    expect(updateUserRoleInputSchema.safeParse({ role: 'SUPERUSER' }).success).toBe(false);
+    expect(updateUserRoleInputSchema.safeParse({ role: 'ADMIN', extra: true }).success).toBe(false);
+  });
+
   it('accepts stable slugs and UUID entity identifiers', () => {
     expect(stableKeySchema.parse('island-3')).toBe('island-3');
     expect(uuidSchema.parse(ids.level)).toBe(ids.level);

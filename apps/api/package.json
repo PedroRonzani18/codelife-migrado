@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/clean-dist.mjs && nest start --watch --env-file .env",
     "build": "nest build && tsc-alias -p tsconfig.build.json",
-    "lint": "eslint src test --max-warnings=0",
+    "lint": "eslint src test scripts --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "test:cov": "jest --coverage --runInBand",
@@ -13,7 +13,8 @@
     "prisma:generate": "prisma generate --config prisma.config.ts",
     "prisma:migrate:dev": "prisma migrate dev --config prisma.config.ts",
     "prisma:migrate:deploy": "prisma migrate deploy --config prisma.config.ts",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "users:promote-admin": "tsx scripts/promote-admin.ts"
   },
   "dependencies": {
     "@codelife/contracts": "workspace:*",
