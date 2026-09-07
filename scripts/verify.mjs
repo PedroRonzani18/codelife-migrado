@@ -207,6 +207,7 @@ try {
   runPnpm(['--filter', 'api', 'prisma:seed'], { env });
   runPnpm(['check'], { env });
   runPnpm(['test:api:integration'], { env });
+  runPnpm(['--filter', 'api', 'users:promote-admin', '--key', 'aluna-demo'], { env });
   api = spawn('pnpm', ['--filter', 'api', 'exec', 'node', 'dist/main.js'], { env, stdio: 'inherit' });
   await waitForUrl(`${apiUrl}/health/ready`, api, 'API');
   web = spawn('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', String(webPort), '--strictPort'], { env, stdio: 'inherit' });
