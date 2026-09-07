@@ -66,6 +66,7 @@ describe('Google backend authentication flow (integration)', () => {
         email: 'person@example.com',
         emailVerified: true,
         displayName: 'Person Example',
+        role: 'ADMIN',
       }),
     };
     const module = await Test.createTestingModule({ imports: [AppModule] })
@@ -100,6 +101,7 @@ describe('Google backend authentication flow (integration)', () => {
       email: 'person@example.com',
       emailVerified: true,
       displayName: 'Person Example',
+      role: 'ADMIN',
     });
   });
 
