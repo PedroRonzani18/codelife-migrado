@@ -10,6 +10,7 @@ import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { ExperimentalLoginThrottleGuard } from './guards/experimental-login-throttle.guard';
 import { GoogleAuthModule } from './google-auth/google-auth.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { ClearSessionCookieInterceptor, SetSessionCookieInterceptor } from './interceptors/session-cookie.interceptor';
 import { PrismaAuthRepository } from './repository/prisma-auth.repository';
 
@@ -44,6 +45,7 @@ import { PrismaAuthRepository } from './repository/prisma-auth.repository';
     SetSessionCookieInterceptor,
     ClearSessionCookieInterceptor,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: CsrfOriginGuard },
   ],
 })

@@ -6,9 +6,10 @@
 - Recorte: jornada autenticada da `island-3`, com três níveis e nove slides.
 - Autenticação Google real concluída; `ExternalIdentity` existente, sessão local
   JWT + cookie HttpOnly preservada e usuário persistido usado pelo progresso.
-- Incremento atual: gestão mínima de usuários e autorização, preparando o
-  modelo e os contratos sem endpoints ou UI administrativos.
-- Papéis planejados neste incremento: `USER | ADMIN`.
+- Incremento atual: gestão mínima de usuários e autorização, com infraestrutura
+  RBAC declarativa no backend e sem endpoints ou UI administrativos.
+- Papéis deste incremento: `USER | ADMIN`; autorização usa o papel persistido,
+  sem role no JWT.
 - Papel acadêmico: produzir evidência técnica delimitada para o TCC; não
   modernizar o CodeLife inteiro nem alegar eficácia pedagógica ou validação
   universal.
