@@ -44,6 +44,12 @@ const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/2026081
 const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
 const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
 const userRoleMigration = readFileSync('apps/api/prisma/migrations/20260906000000_tcc30_user_roles/migration.sql', 'utf8');
+const macro5E2eUser = {
+  id: '00000000-0000-4000-8000-000000002201',
+  key: 'macro5-e2e-user',
+  username: 'macro5.e2e.user',
+  displayName: 'Macro 5 E2E User',
+};
 
 const tcc14FixtureSql = `
 INSERT INTO "User" ("id", "key", "username", "displayName", "createdAt", "updatedAt")
@@ -78,6 +84,13 @@ function expectPsqlFailure(database, sql, expectedMessage) {
     const details = error instanceof Error ? `${error.message}\n${error.stderr ?? ''}` : String(error);
     if (!details.includes(expectedMessage)) throw error;
   }
+}
+
+function prepareMacro5E2eUser() {
+  psql('codelife_test', `
+    INSERT INTO "User" ("id", "key", "username", "displayName", "role", "createdAt", "updatedAt")
+    VALUES ('${macro5E2eUser.id}', '${macro5E2eUser.key}', '${macro5E2eUser.username}', '${macro5E2eUser.displayName}', 'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  `);
 }
 
 function validateTcc15UpgradeScenarios(env) {
@@ -208,6 +221,7 @@ try {
   runPnpm(['check'], { env });
   runPnpm(['test:api:integration'], { env });
   runPnpm(['--filter', 'api', 'users:promote-admin', '--key', 'aluna-demo'], { env });
+  prepareMacro5E2eUser();
   api = spawn('pnpm', ['--filter', 'api', 'exec', 'node', 'dist/main.js'], { env, stdio: 'inherit' });
   await waitForUrl(`${apiUrl}/health/ready`, api, 'API');
   web = spawn('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', String(webPort), '--strictPort'], { env, stdio: 'inherit' });
