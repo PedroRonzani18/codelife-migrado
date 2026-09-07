@@ -62,14 +62,15 @@ removidos pelo próprio `verify` ao final.
 | Bootstrap administrativo controlado | script explícito por chave pública | evita promoção por email, claim externo ou seed. |
 | E2E USER e ADMIN com execução determinística | ADMIN pelo mecanismo experimental existente; USER por JWT de fixture efêmera | não depende de credenciais reais Google e não adiciona login experimental ao produto. |
 | Smoke Google real | não executado | credenciais externas não estavam disponíveis; fica como evidência complementar para TCC-31. |
+| Preservar as fronteiras existentes durante o incremento | separação de `UsersRepository` para `User` e `ExternalIdentitiesRepository` para `ExternalIdentity`, coordenação em `AuthService`, atomicidade em `IdentityTransaction` e organização feature-first de `learning` por `islands`, `levels`, `progress` e `media` | desvio estrutural controlado durante a aplicação da intervenção: a capacidade própria de usuários evidenciou inconsistências nas fronteiras; a reorganização consolidou os ADRs [0008](../adr/0008-organizacao-feature-first-api.md) e [0009](../adr/0009-ports-de-persistencia.md), sem alterar o contrato funcional da aprendizagem. |
+
+Essa alteração deve ser classificada como desvio estrutural controlado durante
+a aplicação da intervenção, e não como expansão funcional do incremento. Nenhuma
+funcionalidade nova de aprendizagem foi criada, o contrato da jornada não mudou
+e os mesmos gates de regressão de autenticação, aprendizagem e progresso foram
+executados após a reorganização.
 
 Riscos residuais: validação restrita ao ambiente local; ausência de deploy,
 pentest e audit log; somente dois papéis; recuperação de administradores fora do
 endpoint; listagem sem paginação; e aviso de depreciação do `pg` durante o
 seed. Nenhum desses itens foi ampliado nesta fatia.
-
-## Referência complementar
-
-O registro operacional completo, incluindo fronteiras arquiteturais, contexto
-atualizado e matriz de conclusão, está em
-`docs/current-implementation/06-macroetapa-gates-e-evidencias-tcc31.md`.
