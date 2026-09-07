@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   apiErrorCodeSchema,
   apiErrorSchema,
+  authSessionSchema,
   completeLevelInputSchema,
   islandDetailSchema,
   levelDetailSchema,
@@ -10,6 +11,7 @@ import {
   stableKeySchema,
   startLevelInputSchema,
   updateCurrentSlideInputSchema,
+  userRoleSchema,
   uuidSchema,
 } from './index.js';
 
@@ -24,6 +26,14 @@ const level = { id: ids.level, title: 'Variáveis', position: 1, availability: '
 const slide = { id: ids.slide, title: 'Texto', position: 1, previousSlideId: null, nextSlideId: null, type: 'TextText' as const, primaryText: 'Conteúdo', secondaryText: null };
 
 describe('shared contracts', () => {
+  it('models the current user role explicitly', () => {
+    expect(userRoleSchema.parse('USER')).toBe('USER');
+    expect(userRoleSchema.safeParse('SUPERUSER').success).toBe(false);
+    expect(authSessionSchema.parse({ user: { id: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' } })).toMatchObject({
+      user: { role: 'USER' },
+    });
+  });
+
   it('accepts stable slugs and UUID entity identifiers', () => {
     expect(stableKeySchema.parse('island-3')).toBe('island-3');
     expect(uuidSchema.parse(ids.level)).toBe(ids.level);

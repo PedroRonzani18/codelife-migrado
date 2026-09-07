@@ -69,7 +69,7 @@ describe('AuthController Google flow', () => {
 
   it('creates the CodeLife session and redirects to the configured frontend', async () => {
     const auth = createService();
-    const user = { id: 'db-user-1', key: 'user-key', username: 'person', displayName: 'Person Example' };
+    const user = { id: 'db-user-1', key: 'user-key', username: 'person', displayName: 'Person Example', role: 'USER' as const };
     auth.completeGoogleAuthentication.mockResolvedValue({ token: 'session-token', user });
     const response = createResponse();
     const controller = new AuthController(auth, config);

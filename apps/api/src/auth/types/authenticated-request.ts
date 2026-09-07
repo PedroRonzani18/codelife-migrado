@@ -1,2 +1,4 @@
 import type { Request } from 'express';
-export type AuthenticatedRequest = Request & { user: { id: string; key: string; username: string; displayName: string } };
+import type { AuthUser } from '../repository/auth.repository.interface';
+
+export type AuthenticatedRequest = Request & { user: AuthUser };

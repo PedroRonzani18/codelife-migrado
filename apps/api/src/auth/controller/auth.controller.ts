@@ -35,8 +35,8 @@ export class AuthController {
   @Get('me')
   @GetCurrentSessionEndpoint()
   me(@CurrentUser() user: AuthUser) {
-    const { key, username, displayName } = user;
-    return authSessionSchema.parse({ user: { id: key, username, displayName } });
+    const { key, username, displayName, role } = user;
+    return authSessionSchema.parse({ user: { id: key, username, displayName, role } });
   }
 
   @Public()

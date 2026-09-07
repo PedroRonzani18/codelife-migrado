@@ -3,21 +3,34 @@ import { IdentityProvider, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   AuthIdentityProvider,
+  AuthUser,
   IAuthRepository,
   NewUserWithExternalIdentity,
 } from './auth.repository.interface';
 import { UniqueConstraintViolationError } from './unique-constraint-violation.error';
 
+const authUserSelect = {
+  id: true,
+  key: true,
+  username: true,
+  displayName: true,
+  role: true,
+} as const;
+
+type PrismaAuthUser = Prisma.UserGetPayload<{ select: typeof authUserSelect }>;
+
 @Injectable()
 export class PrismaAuthRepository implements IAuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+  async findUserById(id: string): Promise<AuthUser | null> {
+    const user = await this.prisma.user.findUnique({ where: { id }, select: authUserSelect });
+    return user ? this.toAuthUser(user) : null;
   }
 
-  findUserByKey(key: string) {
-    return this.prisma.user.findUnique({ where: { key } });
+  async findUserByKey(key: string): Promise<AuthUser | null> {
+    const user = await this.prisma.user.findUnique({ where: { key }, select: authUserSelect });
+    return user ? this.toAuthUser(user) : null;
   }
 
   async findUserByExternalIdentity(provider: AuthIdentityProvider, subject: string) {
@@ -28,9 +41,9 @@ export class PrismaAuthRepository implements IAuthRepository {
           subject,
         },
       },
-      include: { user: true },
+      select: { user: { select: authUserSelect } },
     });
-    return identity?.user ?? null;
+    return identity?.user ? this.toAuthUser(identity.user) : null;
   }
 
   async createUserWithExternalIdentity(input: NewUserWithExternalIdentity) {
@@ -42,6 +55,7 @@ export class PrismaAuthRepository implements IAuthRepository {
             username: input.username,
             displayName: input.displayName,
           },
+          select: authUserSelect,
         });
         await transaction.externalIdentity.create({
           data: {
@@ -52,7 +66,7 @@ export class PrismaAuthRepository implements IAuthRepository {
             userId: user.id,
           },
         });
-        return user;
+        return this.toAuthUser(user);
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -65,5 +79,15 @@ export class PrismaAuthRepository implements IAuthRepository {
   private toPrismaProvider(provider: AuthIdentityProvider): IdentityProvider {
     if (provider === 'GOOGLE') return IdentityProvider.GOOGLE;
     throw new Error(`Unsupported authentication provider: ${provider}`);
+  }
+
+  private toAuthUser(user: PrismaAuthUser): AuthUser {
+    return {
+      id: user.id,
+      key: user.key,
+      username: user.username,
+      displayName: user.displayName,
+      role: user.role,
+    };
   }
 }

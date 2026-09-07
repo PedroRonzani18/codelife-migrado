@@ -125,8 +125,17 @@ describe('Google backend authentication flow (integration)', () => {
 
     const session = await request(app.getHttpServer()).get('/auth/me').set('Cookie', sessionCookie!).expect(200);
     expect(authSessionSchema.parse(session.body)).toMatchObject({
-      user: { username: 'person-example', displayName: 'Person Example' },
+      user: { username: 'person-example', displayName: 'Person Example', role: 'USER' },
     });
+    const persistedIdentity = await prisma.externalIdentity.findFirstOrThrow({
+      where: { subject },
+      select: { userId: true },
+    });
+    await prisma.user.update({ where: { id: persistedIdentity.userId }, data: { role: 'ADMIN' } });
+    const refreshedSession = authSessionSchema.parse(
+      (await request(app.getHttpServer()).get('/auth/me').set('Cookie', sessionCookie!).expect(200)).body,
+    );
+    expect(refreshedSession.user.role).toBe('ADMIN');
     expect(googleAuth.handleCallback).toHaveBeenCalledWith({
       callbackUrl: `${googleRedirectUri}?code=authorization-code&state=provider-state`,
       state: 'provider-state',

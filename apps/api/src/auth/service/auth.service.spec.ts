@@ -7,7 +7,7 @@ import { UniqueConstraintViolationError } from '../repository/unique-constraint-
 import { AuthService, EXPERIMENTAL_USER_KEY } from './auth.service';
 
 describe('AuthService', () => {
-  const user = { id: 'db-user-1', key: EXPERIMENTAL_USER_KEY, username: 'aluna.demo', displayName: 'Aluna Demo' };
+  const user = { id: 'db-user-1', key: EXPERIMENTAL_USER_KEY, username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' as const };
   let repository: jest.Mocked<IAuthRepository>;
   let jwt: { signAsync: jest.Mock; verifyAsync: jest.Mock };
   let googleAuth: { createAuthorizationUrl: jest.Mock; handleCallback: jest.Mock };
@@ -147,6 +147,7 @@ describe('AuthService', () => {
       key: 'generated-key',
       username: 'pedro-augusto-ronzani',
       displayName: 'Pedro Augusto Ronzani',
+      role: 'USER' as const,
     };
     repository.findUserByExternalIdentity.mockResolvedValue(null);
     repository.createUserWithExternalIdentity.mockResolvedValue(createdUser);

@@ -29,28 +29,35 @@ describe('PrismaAuthRepository', () => {
   });
 
   it('delegates identity lookups by database id and stable key', async () => {
-    findUnique.mockResolvedValueOnce({ id: 'user-1' }).mockResolvedValueOnce({ key: 'aluna-demo' });
+    findUnique.mockResolvedValueOnce({ id: 'user-1', key: 'user-key', username: 'user', displayName: 'User', role: 'USER' })
+      .mockResolvedValueOnce({ id: 'user-2', key: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' });
 
     await repository.findUserById('user-1');
     await repository.findUserByKey('aluna-demo');
 
-    expect(findUnique).toHaveBeenNthCalledWith(1, { where: { id: 'user-1' } });
-    expect(findUnique).toHaveBeenNthCalledWith(2, { where: { key: 'aluna-demo' } });
+    expect(findUnique).toHaveBeenNthCalledWith(1, {
+      where: { id: 'user-1' },
+      select: { id: true, key: true, username: true, displayName: true, role: true },
+    });
+    expect(findUnique).toHaveBeenNthCalledWith(2, {
+      where: { key: 'aluna-demo' },
+      select: { id: true, key: true, username: true, displayName: true, role: true },
+    });
   });
 
   it('finds a user through the provider and external subject', async () => {
-    const user = { id: 'user-1', key: 'user-key', username: 'user', displayName: 'User' };
+    const user = { id: 'user-1', key: 'user-key', username: 'user', displayName: 'User', role: 'USER' };
     externalIdentityFindUnique.mockResolvedValue({ user });
 
     await expect(repository.findUserByExternalIdentity('GOOGLE', 'google-subject')).resolves.toEqual(user);
     expect(externalIdentityFindUnique).toHaveBeenCalledWith({
       where: { provider_subject: { provider: IdentityProvider.GOOGLE, subject: 'google-subject' } },
-      include: { user: true },
+      select: { user: { select: { id: true, key: true, username: true, displayName: true, role: true } } },
     });
   });
 
   it('creates User and ExternalIdentity in the same transaction', async () => {
-    const user = { id: 'user-1', key: 'generated-key', username: 'pedro-augusto', displayName: 'Pedro Augusto' };
+    const user = { id: 'user-1', key: 'generated-key', username: 'pedro-augusto', displayName: 'Pedro Augusto', role: 'USER' };
     userCreate.mockResolvedValue(user);
     externalIdentityCreate.mockResolvedValue({});
 
@@ -67,6 +74,7 @@ describe('PrismaAuthRepository', () => {
     expect(transactionRunner).toHaveBeenCalledTimes(1);
     expect(userCreate).toHaveBeenCalledWith({
       data: { key: 'generated-key', username: 'pedro-augusto', displayName: 'Pedro Augusto' },
+      select: { id: true, key: true, username: true, displayName: true, role: true },
     });
     expect(externalIdentityCreate).toHaveBeenCalledWith({
       data: {

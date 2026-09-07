@@ -44,7 +44,7 @@ describe('experimental foundation (integration)', () => {
     const cookie = login.headers['set-cookie'][0];
     expect(cookie).toContain('HttpOnly');
     expect(cookie).toContain('SameSite=Lax');
-    await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie).expect(200, { user: { id: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo' } });
+    await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie).expect(200, { user: { id: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo', role: 'USER' } });
     const island = await request(app.getHttpServer()).get('/learning/islands/island-3').set('Cookie', cookie).expect(200);
     expect(islandDetailSchema.parse(island.body).levels.map((level) => level.id)).toEqual(fixtureIds.levels);
     expect(islandDetailSchema.parse(island.body).levels.map((level) => level.availability)).toEqual(['available', 'blocked', 'blocked']);
