@@ -1,5 +1,5 @@
 import type { IExternalIdentitiesRepository } from './external-identities.repository.interface';
-import type { IUsersRepository } from '../../users/persistence/users.repository.interface';
+import type { IUsersRepository } from '../../users/repository/users.repository.interface';
 
 export interface IdentityTransactionRepositories {
   users: IUsersRepository;

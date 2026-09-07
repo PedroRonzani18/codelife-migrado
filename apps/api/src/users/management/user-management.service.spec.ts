@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import type { IUsersRepository, UserRecord } from '../persistence/users.repository.interface';
+import type { IUsersRepository, UserRecord } from '../repository/users.repository.interface';
 import { UserManagementService } from './user-management.service';
 
 const records: UserRecord[] = [

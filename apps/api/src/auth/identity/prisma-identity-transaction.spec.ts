@@ -1,7 +1,7 @@
 import type { PrismaService } from '@/prisma/prisma.service';
 import { PrismaExternalIdentitiesRepository } from './prisma-external-identities.repository';
 import { PrismaIdentityTransaction } from './prisma-identity-transaction';
-import { PrismaUsersRepository } from '../../users/persistence/prisma-users.repository';
+import { PrismaUsersRepository } from '../../users/repository/prisma-users.repository';
 
 describe('PrismaIdentityTransaction', () => {
   it('runs the identity provisioning callback with repositories bound to one transaction client', async () => {

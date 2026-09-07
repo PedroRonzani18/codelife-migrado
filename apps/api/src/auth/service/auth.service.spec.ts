@@ -2,7 +2,7 @@ import { ForbiddenException, ServiceUnavailableException, UnauthorizedException 
 import type { ConfigService } from '@nestjs/config';
 import type { JwtService } from '@nestjs/jwt';
 import type { GoogleAuthService } from '../google-auth/google-auth.service';
-import type { IUsersRepository } from '../../users/persistence/users.repository.interface';
+import type { IUsersRepository } from '../../users/repository/users.repository.interface';
 import type { UserRecord } from '../../users/internal/user-record';
 import type { ExternalIdentityRecord, IExternalIdentitiesRepository } from '../identity/external-identities.repository.interface';
 import type { IdentityTransactionRepositories, IIdentityTransaction } from '../identity/identity-transaction.interface';

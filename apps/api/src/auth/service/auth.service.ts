@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { AUTH_PROVIDER_KEYS } from '../constants';
 import { GoogleAuthService } from '../google-auth/google-auth.service';
 import { USERS_PROVIDER_KEYS } from '../../users/constants';
-import type { IUsersRepository } from '../../users/persistence/users.repository.interface';
+import type { IUsersRepository } from '../../users/repository/users.repository.interface';
 import type { UserRecord } from '../../users/internal/user-record';
 import type {
   ExternalIdentityRecord,

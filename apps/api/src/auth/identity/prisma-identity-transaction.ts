@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PrismaExternalIdentitiesRepository } from './prisma-external-identities.repository';
-import { PrismaUsersRepository } from '../../users/persistence/prisma-users.repository';
+import { PrismaUsersRepository } from '../../users/repository/prisma-users.repository';
 import type { IdentityTransactionRepositories, IIdentityTransaction } from './identity-transaction.interface';
 
 @Injectable()

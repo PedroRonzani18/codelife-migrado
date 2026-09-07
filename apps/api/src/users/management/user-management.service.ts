@@ -8,7 +8,7 @@ import {
 } from '@codelife/contracts/users';
 import { USERS_PROVIDER_KEYS } from '../constants';
 import type { UserRecord } from '../internal/user-record';
-import type { IUsersRepository } from '../persistence/users.repository.interface';
+import type { IUsersRepository } from '../repository/users.repository.interface';
 
 function toAdminUser(user: UserRecord): AdminUser {
   return adminUserSchema.parse({
