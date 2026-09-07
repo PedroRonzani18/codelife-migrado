@@ -1,6 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
-import type { AuthUserRole } from '../repository/auth.repository.interface';
+import type { UserRole } from '@codelife/contracts/auth';
 
 export const ROLES_KEY = 'roles';
 
-export const Roles = (...roles: AuthUserRole[]) => SetMetadata(ROLES_KEY, roles);
+export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);

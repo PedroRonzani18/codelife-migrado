@@ -1,8 +1,4 @@
 export const AUTH_PROVIDER_KEYS = {
-  // Serviços
-  AUTH_SERVICE: 'IAuthService',
-
-  // Repositórios
   AUTH_REPOSITORY: 'IAuthRepository',
 } as const;
 

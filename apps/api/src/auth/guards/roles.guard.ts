@@ -1,8 +1,9 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import type { UserRole } from '@codelife/contracts/auth';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import type { AuthUser, AuthUserRole } from '../repository/auth.repository.interface';
+import type { AuthUser } from '../types/auth-user';
 
 type RequestWithOptionalUser = Request & { user?: AuthUser };
 
@@ -11,7 +12,7 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<AuthUserRole[] | undefined>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[] | undefined>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);

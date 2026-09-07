@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { map, type Observable } from 'rxjs';
 import { authSessionSchema } from '@codelife/contracts/auth';
 import { clearSessionCookieOptions, sessionCookieOptions } from '../cookies/auth-cookie';
-import type { AuthSession } from '../service/auth.service.interface';
+import type { AuthSession } from '../service/auth.service';
 
 @Injectable()
 export class SetSessionCookieInterceptor implements NestInterceptor<AuthSession, ReturnType<typeof authSessionSchema.parse>> {

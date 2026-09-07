@@ -6,13 +6,18 @@ e os testes dos repositories apenas verificavam o objeto de consulta enviado ao
 Prisma, sem confirmar compatibilidade com schema, relações ou fixture reais.
 
 **Decisão.** Definir um port TypeScript e um token de injeção por fronteira de
-persistência. `AuthService` depende de `AuthRepositoryPort`, e `IslandsService`
-depende de `IslandsRepositoryPort`. As implementações recebem nomes explícitos
-`PrismaAuthRepository` e `PrismaIslandsRepository` e são associadas aos tokens
-nos módulos Nest. Os ports expõem modelos de leitura pertencentes à aplicação,
-sem tipos gerados pelo Prisma. Testes unitários dos services usam mocks tipados.
-Cada repository Prisma possui um teste unitário de delegação e um teste de
-integração contra o banco isolado e a fixture versionada.
+persistência coerente consumida pela aplicação. Um repository não é criado
+mecanicamente por tabela ou endpoint: pode representar uma entidade simples,
+como `UsersRepository`, ou uma operação que atravessa múltiplas tabelas, como
+autenticação e progresso. `AuthService` depende de um port de autenticação, e
+`IslandsService` depende de um port de ilhas. As implementações recebem
+nomes explícitos `PrismaAuthRepository` e `PrismaIslandsRepository` e são
+associadas aos tokens nos módulos Nest. Os ports expõem modelos de leitura
+pertencentes à aplicação, sem tipos gerados pelo Prisma. Interfaces de services
+com uma única implementação e sem boundary substituível não são obrigatórias;
+nesses casos, o Nest injeta a classe concreta. Testes unitários dos services
+usam mocks tipados. Cada repository Prisma possui um teste unitário de
+delegação e um teste de integração contra o banco isolado e a fixture versionada.
 
 **Alternativas.** Manter dependência nas classes concretas seria suficiente
 enquanto houvesse uma única implementação, mas preservaria o acoplamento dos

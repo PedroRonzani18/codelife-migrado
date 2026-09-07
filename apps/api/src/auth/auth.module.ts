@@ -40,7 +40,6 @@ import { PrismaAuthRepository } from './repository/prisma-auth.repository';
   providers: [
     { provide: AUTH_PROVIDER_KEYS.AUTH_REPOSITORY, useClass: PrismaAuthRepository },
     AuthService,
-    { provide: AUTH_PROVIDER_KEYS.AUTH_SERVICE, useExisting: AuthService },
     ExperimentalLoginThrottleGuard,
     SetSessionCookieInterceptor,
     ClearSessionCookieInterceptor,

@@ -1,9 +1,10 @@
 import { ForbiddenException, UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
-import type { AuthUser, AuthUserRole } from '../repository/auth.repository.interface';
+import type { UserRole } from '@codelife/contracts/auth';
+import type { AuthUser } from '../types/auth-user';
 import { RolesGuard } from './roles.guard';
 
-function user(role: AuthUserRole): AuthUser {
+function user(role: UserRole): AuthUser {
   return { id: 'user-id', key: 'user-key', username: 'user', displayName: 'User', role };
 }
 
@@ -25,7 +26,7 @@ describe('RolesGuard', () => {
     reflector.getAllAndOverride.mockReset();
   });
 
-  it.each<AuthUserRole>(['USER', 'ADMIN'])('allows %s without role metadata', (role) => {
+  it.each<UserRole>(['USER', 'ADMIN'])('allows %s without role metadata', (role) => {
     reflector.getAllAndOverride.mockReturnValue(undefined);
 
     expect(guard.canActivate(contextFor(user(role)).context)).toBe(true);

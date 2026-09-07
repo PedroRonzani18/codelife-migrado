@@ -1,6 +1,5 @@
 export const USERS_PROVIDER_KEYS = {
-  ADMIN_USERS_SERVICE: 'IAdminUsersService',
-  ADMIN_USERS_REPOSITORY: 'IAdminUsersRepository',
+  USERS_REPOSITORY: 'IUsersRepository',
 } as const;
 
 export type UsersProviderKeys =

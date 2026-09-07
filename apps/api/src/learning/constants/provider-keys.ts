@@ -1,11 +1,5 @@
 export const LEARNING_PROVIDER_KEYS = {
-  // Serviços
-  ISLANDS_SERVICE: 'IIslandsService',
-  LEVELS_SERVICE: 'ILevelsService',
-  MEDIA_SERVICE: 'IMediaService',
-  PROGRESS_SERVICE: 'IProgressService',
-
-  // Repositórios e infraestrutura
+  // Ports de persistência e infraestrutura substituível
   ISLANDS_REPOSITORY: 'IIslandsRepository',
   LEVELS_REPOSITORY: 'ILevelsRepository',
   MEDIA_REPOSITORY: 'IMediaRepository',

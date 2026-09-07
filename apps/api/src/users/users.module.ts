@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
-import { AdminUsersController } from './controller/admin-users/admin-users.controller';
+import { AdminUsersController } from './admin/admin-users.controller';
 import { USERS_PROVIDER_KEYS } from './constants';
-import { PrismaAdminUsersRepository } from './repository/admin-users/prisma-admin-users.repository';
-import { AdminUsersService } from './service/admin-users/admin-users.service';
+import { PrismaUsersRepository } from './persistence/prisma-users.repository';
+import { UserManagementService } from './management/user-management.service';
 
 @Module({
   controllers: [AdminUsersController],
   providers: [
-    { provide: USERS_PROVIDER_KEYS.ADMIN_USERS_REPOSITORY, useClass: PrismaAdminUsersRepository },
-    { provide: USERS_PROVIDER_KEYS.ADMIN_USERS_SERVICE, useClass: AdminUsersService },
+    { provide: USERS_PROVIDER_KEYS.USERS_REPOSITORY, useClass: PrismaUsersRepository },
+    UserManagementService,
   ],
 })
 export class UsersModule {}

@@ -3,10 +3,10 @@ import { IdentityProvider, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   AuthIdentityProvider,
-  AuthUser,
   IAuthRepository,
   NewUserWithExternalIdentity,
 } from './auth.repository.interface';
+import type { AuthUser } from '../types/auth-user';
 import { UniqueConstraintViolationError } from './unique-constraint-violation.error';
 
 const authUserSelect = {

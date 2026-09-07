@@ -2,10 +2,10 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
+import type { AuthService } from '../service/auth.service';
 import {
   GOOGLE_AUTH_TRANSACTION_COOKIE,
 } from '../cookies/auth-cookie';
-import type { IAuthService } from '../service/auth.service.interface';
 
 describe('AuthController Google flow', () => {
   const configValues: Record<string, unknown> = {
@@ -40,7 +40,7 @@ describe('AuthController Google flow', () => {
       completeGoogleAuthentication: jest.fn(),
       resolveGoogleIdentity: jest.fn(),
       resolveSession: jest.fn(),
-    } as jest.Mocked<IAuthService>;
+    } as unknown as jest.Mocked<AuthService>;
   }
 
   it('stores the signed OIDC transaction and redirects to Google', async () => {

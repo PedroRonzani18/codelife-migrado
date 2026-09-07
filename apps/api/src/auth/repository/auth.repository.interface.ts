@@ -1,12 +1,4 @@
-export type AuthUserRole = 'USER' | 'ADMIN';
-
-export interface AuthUser {
-  id: string;
-  key: string;
-  username: string;
-  displayName: string;
-  role: AuthUserRole;
-}
+import type { AuthUser } from '../types/auth-user';
 
 export type AuthIdentityProvider = 'GOOGLE';
 

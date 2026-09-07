@@ -7,12 +7,22 @@ import { GoogleAuthService } from '../google-auth/google-auth.service';
 import type { IAuthRepository } from '../repository/auth.repository.interface';
 import { UniqueConstraintViolationError } from '../repository/unique-constraint-violation.error';
 import type { GoogleIdentity } from '../google-auth/google-auth.types';
-import type {
-  AuthSession,
-  GoogleAuthenticationInput,
-  GoogleAuthorization,
-  IAuthService,
-} from './auth.service.interface';
+import type { AuthUser } from '../types/auth-user';
+
+export interface AuthSession {
+  token: string;
+  user: AuthUser;
+}
+
+export interface GoogleAuthorization {
+  authorizationUrl: string;
+  transactionToken: string;
+}
+
+export interface GoogleAuthenticationInput {
+  callbackUrl: string;
+  transactionToken?: string;
+}
 
 export const EXPERIMENTAL_USER_KEY = 'aluna-demo';
 const GOOGLE_PROVIDER = 'GOOGLE' as const;
@@ -27,7 +37,7 @@ interface GoogleAuthTransaction {
 }
 
 @Injectable()
-export class AuthService implements IAuthService {
+export class AuthService {
   constructor(
     @Inject(AUTH_PROVIDER_KEYS.AUTH_REPOSITORY) private readonly repository: IAuthRepository,
     private readonly jwt: JwtService,
