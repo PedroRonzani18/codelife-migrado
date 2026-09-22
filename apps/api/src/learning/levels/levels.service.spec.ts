@@ -8,7 +8,7 @@ import { LevelsService } from './levels.service';
 describe('LevelsService', () => {
   let repository: jest.Mocked<ILevelsRepository>;
   let storage: jest.Mocked<IObjectStorage>;
-  let progress: jest.Mocked<Pick<ProgressService, 'snapshot'>>;
+  let progress: jest.Mocked<Pick<ProgressService, 'assertLevelAccess'>>;
   let service: LevelsService;
   const slides: PositionedSlideRecord[] = [
     { id: fixtureIds.slides[0], title: 'Texto', type: 'TextText', position: 1, textText: { primaryText: 'Principal', secondaryText: null }, textImage: null, textCode: null },
@@ -32,7 +32,27 @@ describe('LevelsService', () => {
       writeMediaObject: jest.fn(),
       deleteMediaObject: jest.fn(),
     };
-    progress = { snapshot: jest.fn().mockResolvedValue({ lastVisited: null, nextRecommended: null, islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levelCount: 1, progress: null, levels: [{ id: fixtureIds.levels[0], title: 'Variáveis', position: 1, availability: 'available', progress: null }] }] }) };
+    progress = {
+      assertLevelAccess: jest.fn().mockResolvedValue({
+        island: {
+          id: fixtureIds.island,
+          slug: 'island-3',
+          title: 'Interatividade',
+          position: 1,
+          availability: 'available',
+          levels: [],
+          progress: null,
+        },
+        level: {
+          id: fixtureIds.levels[0],
+          title: 'Variáveis',
+          position: 1,
+          availability: 'available',
+          slides: [],
+          progress: null,
+        },
+      }),
+    };
     service = new LevelsService(repository, storage, progress as unknown as ProgressService);
   });
 
@@ -47,39 +67,37 @@ describe('LevelsService', () => {
     expect(storage.resolveControlledObject).toHaveBeenCalledTimes(1);
   });
 
-  it('returns not found for an absent level', async () => {
+  it('returns not found for an absent level in repository', async () => {
     repository.levelById.mockResolvedValue(null);
     await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('propagates not found when level is absent or unpublished', async () => {
+    progress.assertLevelAccess.mockRejectedValue(new NotFoundException('Nível não encontrado'));
+    await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toBeInstanceOf(NotFoundException);
+    expect(repository.levelById).not.toHaveBeenCalled();
+  });
+
   it('rejects direct reads of a blocked level before loading slide assets', async () => {
-    progress.snapshot.mockResolvedValue({
-      lastVisited: null,
-      nextRecommended: null,
-      islands: [{
-        id: fixtureIds.island,
-        slug: 'island-3',
-        title: 'Interatividade',
-        levelCount: 1,
-        progress: null,
-        levels: [{
-          id: fixtureIds.levels[0],
-          title: 'Variáveis',
-          position: 1,
-          availability: 'blocked',
-          progress: null,
-        }],
-      }],
-    });
+    progress.assertLevelAccess.mockRejectedValue(
+      new ForbiddenException({ code: 'LEVEL_BLOCKED', message: 'Nível bloqueado' }),
+    );
     await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toBeInstanceOf(ForbiddenException);
     expect(storage.resolveControlledObject).not.toHaveBeenCalled();
   });
 
-  it('rejects inconsistent subtypes and a divergent progress snapshot', async () => {
+  it('rejects direct reads when parent island is blocked with ISLAND_BLOCKED', async () => {
+    progress.assertLevelAccess.mockRejectedValue(
+      new ForbiddenException({ code: 'ISLAND_BLOCKED', message: 'Ilha bloqueada' }),
+    );
+    await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toMatchObject({
+      response: { code: 'ISLAND_BLOCKED' },
+    });
+    expect(storage.resolveControlledObject).not.toHaveBeenCalled();
+  });
+
+  it('rejects inconsistent subtypes', async () => {
     repository.levelById.mockResolvedValue({ id: fixtureIds.levels[0], islandId: fixtureIds.island, title: 'Variáveis', position: 1, slides: [{ ...slides[0], textCode: { text: 'x', code: 'x', language: 'text' } }] });
     await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toThrow('expected exactly one subtype');
-    repository.levelById.mockResolvedValue({ id: fixtureIds.levels[0], islandId: fixtureIds.island, title: 'Variáveis', position: 1, slides: [] });
-    progress.snapshot.mockResolvedValue({ lastVisited: null, nextRecommended: null, islands: [] });
-    await expect(service.levelDetail(fixtureIds.user, fixtureIds.levels[0])).rejects.toThrow('level is absent');
   });
 });

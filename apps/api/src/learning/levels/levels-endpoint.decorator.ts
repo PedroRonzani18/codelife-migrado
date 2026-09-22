@@ -10,7 +10,9 @@ export function GetLevelEndpoint() {
     ApiResponse({ status: 200, description: 'Nível, slides ordenados e vínculos previousSlideId/nextSlideId.', type: LevelDetailResponseDto }),
     ApiResponse({ status: 400, description: 'UUID inválido.' }),
     ApiResponse({ status: 401, description: 'Sessão ausente ou inválida.' }),
-    ApiForbiddenResponse({ description: 'LEVEL_BLOCKED quando o predecessor ainda não foi concluído.' }),
+    ApiForbiddenResponse({
+      description: 'ISLAND_BLOCKED se a ilha estiver bloqueada, ou LEVEL_BLOCKED se o nível predecessor ainda não foi concluído.',
+    }),
     ApiResponse({ status: 404, description: 'Nível não encontrado.' }),
   );
 }

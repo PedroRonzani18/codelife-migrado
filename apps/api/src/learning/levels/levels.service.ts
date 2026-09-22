@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { levelDetailSchema, type LevelDetail, type Slide } from '@codelife/contracts/learning';
 import { LEARNING_PROVIDER_KEYS } from '../constants';
 import type { IObjectStorage } from '../media/object-storage.interface';
@@ -14,15 +14,9 @@ export class LevelsService {
   ) {}
 
   async levelDetail(userId: string, levelId: string): Promise<LevelDetail> {
+    const { level: derivedLevel } = await this.progress.assertLevelAccess(userId, levelId);
     const level = await this.repository.levelById(levelId);
     if (!level) throw new NotFoundException('Nível não encontrado');
-    const snapshot = await this.progress.snapshot(userId);
-    const snapshotIsland = snapshot.islands.find((island) => island.id === level.islandId);
-    const snapshotLevel = snapshotIsland?.levels.find((candidate) => candidate.id === level.id);
-    if (!snapshotLevel) throw new Error('Inconsistent learning data: level is absent from the progress snapshot');
-    if (snapshotLevel.availability === 'blocked') {
-      throw new ForbiddenException({ code: 'LEVEL_BLOCKED', message: 'Nível bloqueado' });
-    }
 
     const slides = await Promise.all(
       level.slides.map((slide, index) => this.mapSlide(slide, level.slides, index)),
@@ -31,8 +25,8 @@ export class LevelsService {
       id: level.id,
       islandId: level.islandId,
       title: level.title,
-      position: level.position,
-      availability: snapshotLevel.availability,
+      position: derivedLevel.position,
+      availability: derivedLevel.availability,
       slides,
     });
   }
