@@ -1,47 +1,76 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { ProgressService } from '../progress/progress.service';
-import type { IIslandsRepository } from './islands.repository.interface';
 import { IslandsService } from './islands.service';
 
 describe('IslandsService', () => {
-  const repository: jest.Mocked<IIslandsRepository> = {
-    islandBySlug: jest.fn(),
-    findById: jest.fn(),
-    findBySlug: jest.fn(),
-    listAll: jest.fn(),
-    count: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    getAdminTree: jest.fn(),
-    getAdminDetail: jest.fn(),
-  };
-  const progress = { snapshot: jest.fn() } as unknown as jest.Mocked<ProgressService>;
-  const service = new IslandsService(repository, progress);
+  const progress = {
+    catalog: jest.fn(),
+    assertIslandAccess: jest.fn(),
+  } as unknown as jest.Mocked<ProgressService>;
+  const service = new IslandsService(progress);
   const islandId = '00000000-0000-4000-8000-000000000301';
   const levelId = '00000000-0000-4000-8000-000000000501';
 
   beforeEach(() => jest.clearAllMocks());
 
-  it('combines direct content with canonical availability', async () => {
-    repository.islandBySlug.mockResolvedValue({ id: islandId, slug: 'island-3', title: 'Interatividade', levels: [{ id: levelId, title: 'Variáveis', position: 1 }] });
-    progress.snapshot.mockResolvedValue({
-      lastVisited: null,
-      nextRecommended: null,
-      islands: [{ id: islandId, slug: 'island-3', title: 'Interatividade', levelCount: 1, progress: null, levels: [{ id: levelId, title: 'Variáveis', position: 1, availability: 'available', progress: null }] }],
+  it('returns catalog from progress service', async () => {
+    const catalogData = [
+      {
+        id: islandId,
+        slug: 'island-1',
+        title: 'Introdução',
+        position: 1,
+        levelCount: 2,
+        availability: 'available' as const,
+      },
+    ];
+    progress.catalog.mockResolvedValue(catalogData);
+
+    const result = await service.catalog('user-id');
+    expect(result).toEqual(catalogData);
+    expect(progress.catalog).toHaveBeenCalledWith('user-id');
+  });
+
+  it('returns island detail with canonical availability and levels', async () => {
+    progress.assertIslandAccess.mockResolvedValue({
+      id: islandId,
+      slug: 'island-3',
+      title: 'Interatividade',
+      position: 1,
+      availability: 'available',
+      levels: [
+        {
+          id: levelId,
+          title: 'Variáveis',
+          position: 1,
+          availability: 'available',
+          slides: [],
+          progress: null,
+        },
+      ],
+      progress: null,
     });
-    await expect(service.islandDetail('user-id', 'island-3')).resolves.toEqual({ id: islandId, slug: 'island-3', title: 'Interatividade', levelCount: 1, levels: [{ id: levelId, title: 'Variáveis', position: 1, availability: 'available' }] });
+
+    await expect(service.islandDetail('user-id', 'island-3')).resolves.toEqual({
+      id: islandId,
+      slug: 'island-3',
+      title: 'Interatividade',
+      levelCount: 1,
+      availability: 'available',
+      levels: [{ id: levelId, title: 'Variáveis', position: 1, availability: 'available' }],
+    });
   });
 
-  it('returns not found before loading progress', async () => {
-    repository.islandBySlug.mockResolvedValue(null);
+  it('propagates not found when island is absent or unpublished', async () => {
+    progress.assertIslandAccess.mockRejectedValue(new NotFoundException('Ilha unknown não encontrada'));
     await expect(service.islandDetail('user-id', 'unknown')).rejects.toBeInstanceOf(NotFoundException);
-    expect(progress.snapshot).not.toHaveBeenCalled();
   });
 
-  it('fails when content and progress snapshots diverge', async () => {
-    repository.islandBySlug.mockResolvedValue({ id: islandId, slug: 'island-3', title: 'Interatividade', levels: [] });
-    progress.snapshot.mockResolvedValue({ lastVisited: null, nextRecommended: null, islands: [] });
-    await expect(service.islandDetail('user-id', 'island-3')).rejects.toThrow('island is absent');
+  it('propagates forbidden when island is blocked', async () => {
+    progress.assertIslandAccess.mockRejectedValue(
+      new ForbiddenException({ code: 'ISLAND_BLOCKED', message: 'Ilha bloqueada' }),
+    );
+    await expect(service.islandDetail('user-id', 'island-2')).rejects.toThrow(ForbiddenException);
   });
 });
+

@@ -25,6 +25,26 @@ export class LevelSummaryResponseDto {
   availability!: string;
 }
 
+export class IslandCatalogItemResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ example: 'island-3' })
+  slug!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty({ minimum: 1 })
+  position!: number;
+
+  @ApiProperty({ minimum: 0 })
+  levelCount!: number;
+
+  @ApiProperty({ enum: ['available', 'in_progress', 'blocked', 'completed'] })
+  availability!: string;
+}
+
 export class IslandDetailResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -37,6 +57,9 @@ export class IslandDetailResponseDto {
 
   @ApiProperty({ minimum: 0 })
   levelCount!: number;
+
+  @ApiPropertyOptional({ enum: ['available', 'in_progress', 'blocked', 'completed'] })
+  availability?: string;
 
   @ApiProperty({ type: [LevelSummaryResponseDto] })
   levels!: LevelSummaryResponseDto[];

@@ -1,32 +1,34 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { islandDetailSchema, type IslandDetail } from '@codelife/contracts/learning';
-import { LEARNING_PROVIDER_KEYS } from '../constants';
-import type { IIslandsRepository } from './islands.repository.interface';
+import { Injectable } from '@nestjs/common';
+import {
+  islandDetailSchema,
+  type IslandCatalogItem,
+  type IslandDetail,
+} from '@codelife/contracts/learning';
 import { ProgressService } from '../progress/progress.service';
 
 @Injectable()
 export class IslandsService {
-  constructor(
-    @Inject(LEARNING_PROVIDER_KEYS.ISLANDS_REPOSITORY) private readonly repository: IIslandsRepository,
-    private readonly progress: ProgressService,
-  ) {}
+  constructor(private readonly progress: ProgressService) {}
+
+  async catalog(userId: string): Promise<IslandCatalogItem[]> {
+    return this.progress.catalog(userId);
+  }
 
   async islandDetail(userId: string, slug: string): Promise<IslandDetail> {
-    const island = await this.repository.islandBySlug(slug);
-    if (!island) throw new NotFoundException(`Ilha ${slug} não encontrada`);
-    const snapshot = await this.progress.snapshot(userId);
-    const progressIsland = snapshot.islands.find((candidate) => candidate.id === island.id);
-    if (!progressIsland) throw new Error('Inconsistent learning data: island is absent from progress snapshot');
+    const island = await this.progress.assertIslandAccess(userId, slug);
     return islandDetailSchema.parse({
       id: island.id,
       slug: island.slug,
       title: island.title,
       levelCount: island.levels.length,
-      levels: island.levels.map((level) => {
-        const progressLevel = progressIsland.levels.find((candidate) => candidate.id === level.id);
-        if (!progressLevel) throw new Error('Inconsistent learning data: level is absent from progress snapshot');
-        return { ...level, availability: progressLevel.availability };
-      }),
+      availability: island.availability,
+      levels: island.levels.map((level) => ({
+        id: level.id,
+        title: level.title,
+        position: level.position,
+        availability: level.availability,
+      })),
     });
   }
 }
+
