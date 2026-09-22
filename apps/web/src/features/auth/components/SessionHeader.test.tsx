@@ -22,6 +22,7 @@ describe('SessionHeader', () => {
 
     expect(screen.getByRole('link', { name: 'Jornada' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Administração' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Conteúdo' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
   });
 
@@ -29,5 +30,6 @@ describe('SessionHeader', () => {
     renderHeader('ADMIN');
 
     expect(screen.getByRole('link', { name: 'Administração' })).toHaveAttribute('href', '/admin/users');
+    expect(screen.getByRole('link', { name: 'Conteúdo' })).toHaveAttribute('href', '/admin/content');
   });
 });
