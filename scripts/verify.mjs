@@ -44,6 +44,7 @@ const tcc14HardeningMigration = readFileSync('apps/api/prisma/migrations/2026081
 const tcc15Migration = readFileSync('apps/api/prisma/migrations/20260820000000_tcc15_compositional_learning/migration.sql', 'utf8');
 const directHierarchyMigration = readFileSync('apps/api/prisma/migrations/20260821000000_simplify_learning_hierarchy/migration.sql', 'utf8');
 const userRoleMigration = readFileSync('apps/api/prisma/migrations/20260906000000_tcc30_user_roles/migration.sql', 'utf8');
+const contentAdminMigration = readFileSync('apps/api/prisma/migrations/20260922000000_tcc32_content_admin_persistence/migration.sql', 'utf8');
 const macro5E2eUser = {
   id: '00000000-0000-4000-8000-000000002201',
   key: 'macro5-e2e-user',
@@ -99,16 +100,36 @@ function validateTcc15UpgradeScenarios(env) {
   psql(upgradeDatabase, tcc15Migration);
   psql(upgradeDatabase, directHierarchyMigration);
   psql(upgradeDatabase, userRoleMigration);
+  psql(upgradeDatabase, contentAdminMigration);
   runPnpm(['--filter', 'api', 'prisma:seed'], { env: { ...env, DATABASE_URL: databaseUrl(upgradeDatabase) } });
   if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island";') !== '1'
-    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '3'
-    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '9'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Level";') !== '1'
+    || scalar(upgradeDatabase, 'SELECT count(*) FROM "Slide";') !== '1'
     || scalar(upgradeDatabase, 'SELECT count(*) FROM "MediaAsset";') !== '3') {
-    throw new Error('TCC-15 upgrade did not recreate the controlled 1 × 3 × 9 hierarchy');
+    throw new Error('TCC-32 seed all-or-nothing policy did not preserve existing content when island exists');
   }
   if (scalar(upgradeDatabase, 'SELECT "role" FROM "User" WHERE "key" = \'aluna-demo\';') !== 'USER') {
     throw new Error('TCC-30 migration did not assign USER to the existing user');
   }
+  if (scalar(upgradeDatabase, 'SELECT "position" FROM "Island" WHERE "slug" = \'island-3\';') !== '1') {
+    throw new Error('TCC-32 migration did not assign deterministic position 1 to island-3');
+  }
+  if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Island" WHERE "publishedAt" IS NOT NULL;') !== '1') {
+    throw new Error('TCC-32 migration did not mark island-3 as published');
+  }
+  if (scalar(upgradeDatabase, 'SELECT count(*) FROM "Level" WHERE "publishedAt" IS NOT NULL;') !== '1') {
+    throw new Error('TCC-32 migration did not mark existing levels as published');
+  }
+  expectPsqlFailure(
+    upgradeDatabase,
+    `INSERT INTO "Island" ("id", "slug", "title", "position") VALUES ('00000000-0000-4000-8000-000000000302', 'invalida', 'Inválida', 0);`,
+    'Island_position_positive',
+  );
+  expectPsqlFailure(
+    upgradeDatabase,
+    `INSERT INTO "Island" ("id", "slug", "title", "position") VALUES ('00000000-0000-4000-8000-000000000303', 'duplicada', 'Duplicada', 1);`,
+    'Island_position_key',
+  );
   expectPsqlFailure(
     upgradeDatabase,
     `INSERT INTO "Level" ("id", "islandId", "title", "position") VALUES ('00000000-0000-4000-8000-000000000511', '00000000-0000-4000-8000-000000000301', 'Inválido', 0);`,
