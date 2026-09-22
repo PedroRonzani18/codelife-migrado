@@ -8,7 +8,7 @@ describe('PrismaIslandsRepository', () => {
     await repository.islandBySlug('island-3');
     expect(findUnique).toHaveBeenCalledWith({
       where: { slug: 'island-3' },
-      select: { id: true, slug: true, title: true, levels: { orderBy: { position: 'asc' }, select: { id: true, position: true, title: true } } },
+      select: { id: true, slug: true, title: true, position: true, publishedAt: true, levels: { orderBy: { position: 'asc' }, select: { id: true, position: true, title: true } } },
     });
   });
 });

@@ -107,4 +107,18 @@ export class PrismaProgressRepository implements IProgressRepository {
     });
     return result.count === 1;
   }
+
+  async hasProgressForIsland(islandId: string): Promise<boolean> {
+    const count = await this.prisma.userIslandProgress.count({
+      where: { islandId },
+    });
+    return count > 0;
+  }
+
+  async hasProgressForLevel(levelId: string): Promise<boolean> {
+    const count = await this.prisma.userLevelProgress.count({
+      where: { levelId },
+    });
+    return count > 0;
+  }
 }

@@ -14,13 +14,18 @@ import { ProgressController } from './progress/progress.controller';
 import { ProgressService } from './progress/progress.service';
 import { PrismaProgressRepository } from './progress/prisma-progress.repository';
 
+import { PrismaSlidesRepository } from './slides/prisma-slides.repository';
+import { PrismaContentTransactionRunner } from './content-management/prisma-content-transaction-runner';
+
 @Module({
   controllers: [IslandsController, LevelsController, MediaController, ProgressController],
   providers: [
     { provide: LEARNING_PROVIDER_KEYS.ISLANDS_REPOSITORY, useClass: PrismaIslandsRepository },
     { provide: LEARNING_PROVIDER_KEYS.LEVELS_REPOSITORY, useClass: PrismaLevelsRepository },
+    { provide: LEARNING_PROVIDER_KEYS.SLIDES_REPOSITORY, useClass: PrismaSlidesRepository },
     { provide: LEARNING_PROVIDER_KEYS.PROGRESS_REPOSITORY, useClass: PrismaProgressRepository },
     { provide: LEARNING_PROVIDER_KEYS.MEDIA_REPOSITORY, useClass: PrismaMediaRepository },
+    { provide: LEARNING_PROVIDER_KEYS.CONTENT_TRANSACTION_RUNNER, useClass: PrismaContentTransactionRunner },
     { provide: LEARNING_PROVIDER_KEYS.OBJECT_STORAGE, useClass: LocalObjectStorage },
     IslandsService,
     LevelsService,

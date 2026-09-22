@@ -25,9 +25,40 @@ export interface PositionedLevelRecord {
   islandId: string;
   title: string;
   position: number;
+  publishedAt?: Date | null;
   slides: PositionedSlideRecord[];
+}
+
+export interface LevelRecord {
+  id: string;
+  islandId: string;
+  title: string;
+  position: number;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateLevelInput {
+  id?: string;
+  islandId: string;
+  title: string;
+  position: number;
+  publishedAt?: Date | null;
+}
+
+export interface UpdateLevelInput {
+  title?: string;
+  position?: number;
+  publishedAt?: Date | null;
 }
 
 export interface ILevelsRepository {
   levelById(levelId: string): Promise<PositionedLevelRecord | null>;
+  findById(id: string): Promise<LevelRecord | null>;
+  findByIslandId(islandId: string): Promise<LevelRecord[]>;
+  countByIslandId(islandId: string): Promise<number>;
+  create(input: CreateLevelInput): Promise<LevelRecord>;
+  update(id: string, input: UpdateLevelInput): Promise<LevelRecord>;
+  delete(id: string): Promise<void>;
 }

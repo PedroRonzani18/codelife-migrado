@@ -64,4 +64,6 @@ export interface IProgressRepository {
   startLevel(input: StartLevelProgressInput): Promise<void>;
   setCurrentSlide(input: SetCurrentSlideInput): Promise<void>;
   completeLevel(input: CompleteLevelProgressInput): Promise<boolean>;
+  hasProgressForIsland(islandId: string): Promise<boolean>;
+  hasProgressForLevel(levelId: string): Promise<boolean>;
 }

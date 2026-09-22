@@ -17,7 +17,15 @@ describe('LevelsService', () => {
   ];
 
   beforeEach(() => {
-    repository = { levelById: jest.fn().mockResolvedValue({ id: fixtureIds.levels[0], islandId: fixtureIds.island, title: 'Variáveis', position: 1, slides }) };
+    repository = {
+      levelById: jest.fn().mockResolvedValue({ id: fixtureIds.levels[0], islandId: fixtureIds.island, title: 'Variáveis', position: 1, slides }),
+      findById: jest.fn(),
+      findByIslandId: jest.fn(),
+      countByIslandId: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
     storage = { resolveControlledObject: jest.fn().mockResolvedValue('/controlled/asset.svg') };
     progress = { snapshot: jest.fn().mockResolvedValue({ lastVisited: null, nextRecommended: null, islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levelCount: 1, progress: null, levels: [{ id: fixtureIds.levels[0], title: 'Variáveis', position: 1, availability: 'available', progress: null }] }] }) };
     service = new LevelsService(repository, storage, progress as unknown as ProgressService);

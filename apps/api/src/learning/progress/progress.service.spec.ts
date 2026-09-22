@@ -14,6 +14,8 @@ describe('ProgressService', () => {
       startLevel: jest.fn(),
       setCurrentSlide: jest.fn(),
       completeLevel: jest.fn(),
+      hasProgressForIsland: jest.fn(),
+      hasProgressForLevel: jest.fn(),
     };
     service = new ProgressService(repository);
   });
