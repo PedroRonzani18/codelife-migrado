@@ -13,17 +13,22 @@ export class PrismaProgressRepository implements IProgressRepository {
 
   async journeyForUser(userId: string) {
     const islands = await this.prisma.island.findMany({
-      orderBy: { slug: 'asc' },
+      where: { publishedAt: { not: null } },
+      orderBy: { position: 'asc' },
       select: {
         id: true,
         slug: true,
         title: true,
+        position: true,
+        publishedAt: true,
         levels: {
+          where: { publishedAt: { not: null } },
           orderBy: { position: 'asc' },
           select: {
             id: true,
             title: true,
             position: true,
+            publishedAt: true,
             slides: { orderBy: { position: 'asc' }, select: { id: true, position: true } },
           },
         },

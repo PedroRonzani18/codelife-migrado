@@ -23,8 +23,15 @@ describe('PrismaProgressRepository', () => {
     const { prisma, repository } = setup();
     const findMany = prisma.island.findMany as jest.Mock;
     findMany.mockResolvedValue([{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: [] }]);
-    await expect(repository.journeyForUser(fixtureIds.user)).resolves.toEqual({ islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: null }] });
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { slug: 'asc' } }));
+    await expect(repository.journeyForUser(fixtureIds.user)).resolves.toEqual({
+      islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: null }],
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { position: 'asc' },
+        where: { publishedAt: { not: null } },
+      }),
+    );
   });
 
   it('starts island and level progress transactionally', async () => {

@@ -143,4 +143,228 @@ describe('ProgressService', () => {
       response: expect.objectContaining({ code: 'LEVEL_NOT_READY_FOR_COMPLETION' }),
     });
   });
+
+  describe('multi-island sequential availability and catalog', () => {
+    const multiIslandJourney = {
+      islands: [
+        {
+          id: '00000000-0000-4000-8000-000000000010',
+          slug: 'island-1',
+          title: 'Ilha 1',
+          position: 1,
+          publishedAt: new Date('2026-01-01'),
+          levels: [
+            {
+              id: '00000000-0000-4000-8000-000000000101',
+              title: 'L1.1',
+              position: 1,
+              publishedAt: new Date('2026-01-01'),
+              slides: [{ id: '00000000-0000-4000-8000-000000001001', position: 1 }],
+            },
+            {
+              id: '00000000-0000-4000-8000-000000000102',
+              title: 'L1.2',
+              position: 2,
+              publishedAt: new Date('2026-01-01'),
+              slides: [{ id: '00000000-0000-4000-8000-000000001002', position: 1 }],
+            },
+          ],
+          progress: null,
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000020',
+          slug: 'island-2',
+          title: 'Ilha 2',
+          position: 2,
+          publishedAt: new Date('2026-01-01'),
+          levels: [
+            {
+              id: '00000000-0000-4000-8000-000000000201',
+              title: 'L2.1',
+              position: 1,
+              publishedAt: new Date('2026-01-01'),
+              slides: [{ id: '00000000-0000-4000-8000-000000002001', position: 1 }],
+            },
+          ],
+          progress: null,
+        },
+      ],
+    };
+
+    it('returns catalog without creating progress, with sequential availability', async () => {
+      repository.journeyForUser.mockResolvedValue(multiIslandJourney);
+      const catalog = await service.catalog(fixtureIds.user);
+
+      expect(catalog).toEqual([
+        {
+          id: '00000000-0000-4000-8000-000000000010',
+          slug: 'island-1',
+          title: 'Ilha 1',
+          position: 1,
+          levelCount: 2,
+          availability: 'available',
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000020',
+          slug: 'island-2',
+          title: 'Ilha 2',
+          position: 2,
+          levelCount: 1,
+          availability: 'blocked',
+        },
+      ]);
+      expect(repository.startLevel).not.toHaveBeenCalled();
+    });
+
+    it('filters out unpublished islands and draft levels and renumbers contiguously', async () => {
+      repository.journeyForUser.mockResolvedValue({
+        islands: [
+          {
+            id: '00000000-0000-4000-8000-000000000010',
+            slug: 'island-1',
+            title: 'Ilha 1',
+            position: 10,
+            publishedAt: new Date('2026-01-01'),
+            levels: [
+              {
+                id: '00000000-0000-4000-8000-000000000101',
+                title: 'L1.1',
+                position: 5,
+                publishedAt: new Date('2026-01-01'),
+                slides: [{ id: '00000000-0000-4000-8000-000000001001', position: 1 }],
+              },
+              {
+                id: '00000000-0000-4000-8000-000000000102',
+                title: 'L1.2 Draft',
+                position: 15,
+                publishedAt: null,
+                slides: [{ id: '00000000-0000-4000-8000-000000001002', position: 1 }],
+              },
+              {
+                id: '00000000-0000-4000-8000-000000000103',
+                title: 'L1.3',
+                position: 25,
+                publishedAt: new Date('2026-01-01'),
+                slides: [{ id: '00000000-0000-4000-8000-000000001003', position: 1 }],
+              },
+            ],
+            progress: null,
+          },
+          {
+            id: '00000000-0000-4000-8000-000000000099',
+            slug: 'island-draft',
+            title: 'Ilha Draft',
+            position: 20,
+            publishedAt: null,
+            levels: [],
+            progress: null,
+          },
+          {
+            id: '00000000-0000-4000-8000-000000000020',
+            slug: 'island-2',
+            title: 'Ilha 2',
+            position: 30,
+            publishedAt: new Date('2026-01-01'),
+            levels: [
+              {
+                id: '00000000-0000-4000-8000-000000000201',
+                title: 'L2.1',
+                position: 1,
+                publishedAt: new Date('2026-01-01'),
+                slides: [{ id: '00000000-0000-4000-8000-000000002001', position: 1 }],
+              },
+            ],
+            progress: null,
+          },
+        ],
+      });
+
+      const catalog = await service.catalog(fixtureIds.user);
+      expect(catalog).toEqual([
+        {
+          id: '00000000-0000-4000-8000-000000000010',
+          slug: 'island-1',
+          title: 'Ilha 1',
+          position: 1,
+          levelCount: 2,
+          availability: 'available',
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000020',
+          slug: 'island-2',
+          title: 'Ilha 2',
+          position: 2,
+          levelCount: 1,
+          availability: 'blocked',
+        },
+      ]);
+    });
+
+    it('rejects access to blocked island with ISLAND_BLOCKED', async () => {
+      repository.journeyForUser.mockResolvedValue(multiIslandJourney);
+
+      await expect(service.assertIslandAccess(fixtureIds.user, 'island-2')).rejects.toMatchObject({
+        response: { code: 'ISLAND_BLOCKED' },
+      });
+      await expect(
+        service.assertLevelAccess(fixtureIds.user, '00000000-0000-4000-8000-000000000201'),
+      ).rejects.toMatchObject({
+        response: { code: 'ISLAND_BLOCKED' },
+      });
+      await expect(
+        service.start(fixtureIds.user, '00000000-0000-4000-8000-000000000201'),
+      ).rejects.toMatchObject({
+        response: { code: 'ISLAND_BLOCKED' },
+      });
+    });
+
+    it('unlocks Island 2 when all levels of Island 1 are completed', async () => {
+      const completedJourney = {
+        islands: [
+          {
+            ...multiIslandJourney.islands[0],
+            progress: {
+              id: 'prog-1',
+              currentLevelId: '00000000-0000-4000-8000-000000000102',
+              startedAt: new Date('2026-08-01'),
+              updatedAt: new Date('2026-08-01'),
+              levels: [
+                {
+                  id: 'lp-1',
+                  levelId: '00000000-0000-4000-8000-000000000101',
+                  currentSlideId: '00000000-0000-4000-8000-000000001001',
+                  startedAt: new Date('2026-08-01'),
+                  completedAt: new Date('2026-08-01'),
+                  updatedAt: new Date('2026-08-01'),
+                },
+                {
+                  id: 'lp-2',
+                  levelId: '00000000-0000-4000-8000-000000000102',
+                  currentSlideId: '00000000-0000-4000-8000-000000001002',
+                  startedAt: new Date('2026-08-02'),
+                  completedAt: new Date('2026-08-02'),
+                  updatedAt: new Date('2026-08-02'),
+                },
+              ],
+            },
+          },
+          multiIslandJourney.islands[1],
+        ],
+      };
+
+      repository.journeyForUser.mockResolvedValue(completedJourney);
+      const catalog = await service.catalog(fixtureIds.user);
+
+      expect(catalog[0].availability).toBe('completed');
+      expect(catalog[1].availability).toBe('available');
+
+      // Island 1 completed is revisitable
+      const island1 = await service.assertIslandAccess(fixtureIds.user, 'island-1');
+      expect(island1.availability).toBe('completed');
+
+      // Island 2 is now accessible
+      const island2 = await service.assertIslandAccess(fixtureIds.user, 'island-2');
+      expect(island2.availability).toBe('available');
+    });
+  });
 });
