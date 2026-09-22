@@ -15,4 +15,11 @@ export const queryKeys = {
     all: ['progress'] as const,
     snapshot: ['progress', 'snapshot'] as const,
   },
+  adminContent: {
+    all: ['admin-content'] as const,
+    tree: ['admin-content', 'tree'] as const,
+    island: (id: string) => ['admin-content', 'island', id] as const,
+    level: (id: string) => ['admin-content', 'level', id] as const,
+    slide: (id: string) => ['admin-content', 'slide', id] as const,
+  },
 } as const;
