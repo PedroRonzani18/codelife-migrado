@@ -9,7 +9,7 @@
     "emitDecoratorMetadata": true,
     "sourceMap": true,
     "isolatedModules": true,
-    "types": ["node", "jest"],
+    "types": ["node", "jest", "multer"],
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "scripts/**/*.ts"]
