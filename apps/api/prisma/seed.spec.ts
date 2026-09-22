@@ -1,5 +1,5 @@
 import { SlideType } from '@prisma/client';
-import { assertFixtureAssets, assertFixtureIntegrity, fixtureIds, islandFixture, resolveFixtureAssetPath, type FixtureSnapshot } from './seed';
+import { assertFixtureAssets, assertFixtureIntegrity, fixtureIds, islandFixture, resolveFixtureAssetPath, seedExperimentalFixture, type FixtureSnapshot } from './seed';
 
 function snapshotSlide(definition: (typeof islandFixture.levels)[number]['slides'][number], index: number) {
   const base = { id: fixtureIds.slides[index], title: definition.title, type: definition.type, position: (index % 3) + 1, textText: null, textImage: null, textCode: null };
@@ -41,5 +41,74 @@ describe('experimental fixture integrity', () => {
   it('uses controlled local assets', async () => {
     await expect(assertFixtureAssets()).resolves.toBeUndefined();
     expect(() => resolveFixtureAssetPath('../outside.svg')).toThrow('unsafe media object key');
+  });
+
+  describe('seedExperimentalFixture all-or-nothing policy', () => {
+    it('skips content and media seeding when any island already exists', async () => {
+      const mockUpsertUser = jest.fn().mockResolvedValue({});
+      const mockCountIsland = jest.fn().mockResolvedValue(1);
+      const mockUpsertMedia = jest.fn();
+      const mockUpsertIsland = jest.fn();
+      const mockUpsertLevel = jest.fn();
+      const mockUpsertSlide = jest.fn();
+
+      const tx = {
+        user: { upsert: mockUpsertUser },
+        island: { count: mockCountIsland, upsert: mockUpsertIsland },
+        mediaAsset: { upsert: mockUpsertMedia },
+        level: { upsert: mockUpsertLevel },
+        slide: { upsert: mockUpsertSlide },
+      };
+
+      const mockPrisma = {
+        $transaction: jest.fn().mockImplementation(async (callback: (t: typeof tx) => Promise<unknown>) => callback(tx)),
+      };
+
+      await seedExperimentalFixture(mockPrisma as unknown as Parameters<typeof seedExperimentalFixture>[0]);
+
+      expect(mockUpsertUser).toHaveBeenCalledTimes(1);
+      expect(mockCountIsland).toHaveBeenCalledTimes(1);
+      expect(mockUpsertMedia).not.toHaveBeenCalled();
+      expect(mockUpsertIsland).not.toHaveBeenCalled();
+      expect(mockUpsertLevel).not.toHaveBeenCalled();
+      expect(mockUpsertSlide).not.toHaveBeenCalled();
+    });
+
+    it('seeds full content and media when no island exists', async () => {
+      const mockUpsertUser = jest.fn().mockResolvedValue({});
+      const mockCountIsland = jest.fn().mockResolvedValue(0);
+      const mockUpsertMedia = jest.fn().mockResolvedValue({});
+      const mockUpsertIsland = jest.fn().mockResolvedValue({});
+      const mockUpsertLevel = jest.fn().mockResolvedValue({});
+      const mockUpsertSlide = jest.fn().mockResolvedValue({});
+      const mockUpsertTextText = jest.fn().mockResolvedValue({});
+      const mockUpsertTextImage = jest.fn().mockResolvedValue({});
+      const mockUpsertTextCode = jest.fn().mockResolvedValue({});
+      const mockFindUniqueIsland = jest.fn().mockResolvedValue(validSnapshot());
+
+      const tx = {
+        user: { upsert: mockUpsertUser },
+        island: { count: mockCountIsland, upsert: mockUpsertIsland, findUnique: mockFindUniqueIsland },
+        mediaAsset: { upsert: mockUpsertMedia },
+        level: { upsert: mockUpsertLevel },
+        slide: { upsert: mockUpsertSlide },
+        textTextSlide: { upsert: mockUpsertTextText },
+        textImageSlide: { upsert: mockUpsertTextImage },
+        textCodeSlide: { upsert: mockUpsertTextCode },
+      };
+
+      const mockPrisma = {
+        $transaction: jest.fn().mockImplementation(async (callback: (t: typeof tx) => Promise<unknown>) => callback(tx)),
+      };
+
+      await seedExperimentalFixture(mockPrisma as unknown as Parameters<typeof seedExperimentalFixture>[0]);
+
+      expect(mockUpsertUser).toHaveBeenCalledTimes(1);
+      expect(mockCountIsland).toHaveBeenCalledTimes(1);
+      expect(mockUpsertMedia).toHaveBeenCalledTimes(3);
+      expect(mockUpsertIsland).toHaveBeenCalledTimes(1);
+      expect(mockUpsertLevel).toHaveBeenCalledTimes(3);
+      expect(mockUpsertSlide).toHaveBeenCalledTimes(9);
+    });
   });
 });
