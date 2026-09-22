@@ -13,6 +13,8 @@ describe('IslandsService', () => {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    getAdminTree: jest.fn(),
+    getAdminDetail: jest.fn(),
   };
   const progress = { snapshot: jest.fn() } as unknown as jest.Mocked<ProgressService>;
   const service = new IslandsService(repository, progress);

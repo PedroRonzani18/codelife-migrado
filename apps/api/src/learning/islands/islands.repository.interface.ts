@@ -47,4 +47,6 @@ export interface IIslandsRepository {
   create(input: CreateIslandInput): Promise<IslandRecord>;
   update(id: string, input: UpdateIslandInput): Promise<IslandRecord>;
   delete(id: string): Promise<void>;
+  getAdminTree(): Promise<import('@codelife/contracts/content-management').AdminContentTree>;
+  getAdminDetail(id: string): Promise<import('@codelife/contracts/content-management').AdminIslandDetail | null>;
 }

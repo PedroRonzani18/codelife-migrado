@@ -66,4 +66,6 @@ export interface IProgressRepository {
   completeLevel(input: CompleteLevelProgressInput): Promise<boolean>;
   hasProgressForIsland(islandId: string): Promise<boolean>;
   hasProgressForLevel(levelId: string): Promise<boolean>;
+  highestIslandPositionWithProgress(): Promise<number | null>;
+  highestLevelPositionWithProgress(islandId: string): Promise<number | null>;
 }

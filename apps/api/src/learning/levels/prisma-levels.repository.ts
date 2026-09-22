@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import type { AdminLevelDetail } from '@codelife/contracts/content-management';
 import type {
   CreateLevelInput,
   ILevelsRepository,
@@ -116,5 +117,81 @@ export class PrismaLevelsRepository implements ILevelsRepository {
     await this.prisma.level.delete({
       where: { id },
     });
+  }
+
+  async getAdminDetail(id: string): Promise<AdminLevelDetail | null> {
+    const level = await this.prisma.level.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { slides: true } },
+        slides: {
+          orderBy: { position: 'asc' },
+          include: {
+            textText: true,
+            textImage: {
+              include: {
+                mediaAsset: true,
+              },
+            },
+            textCode: true,
+          },
+        },
+      },
+    });
+    if (!level) return null;
+
+    return {
+      id: level.id,
+      islandId: level.islandId,
+      title: level.title,
+      position: level.position,
+      publishedAt: level.publishedAt ? level.publishedAt.toISOString() : null,
+      createdAt: level.createdAt.toISOString(),
+      updatedAt: level.updatedAt.toISOString(),
+      slideCount: level._count.slides,
+      slides: level.slides.map((slide) => {
+        const base = {
+          id: slide.id,
+          levelId: slide.levelId,
+          title: slide.title,
+          position: slide.position,
+          createdAt: slide.createdAt.toISOString(),
+          updatedAt: slide.updatedAt.toISOString(),
+        };
+        if (slide.type === 'TextText' && slide.textText) {
+          return {
+            ...base,
+            type: 'TextText' as const,
+            primaryText: slide.textText.primaryText,
+            secondaryText: slide.textText.secondaryText ?? null,
+          };
+        }
+        if (slide.type === 'TextImage' && slide.textImage) {
+          return {
+            ...base,
+            type: 'TextImage' as const,
+            text: slide.textImage.text,
+            mediaAssetId: slide.textImage.mediaAssetId,
+            mediaAsset: {
+              id: slide.textImage.mediaAsset.id,
+              objectKey: slide.textImage.mediaAsset.objectKey,
+              mimeType: slide.textImage.mediaAsset.mimeType,
+              sizeBytes: slide.textImage.mediaAsset.sizeBytes,
+              width: slide.textImage.mediaAsset.width,
+              height: slide.textImage.mediaAsset.height,
+              checksum: slide.textImage.mediaAsset.checksum,
+            },
+            altText: slide.textImage.altText,
+          };
+        }
+        return {
+          ...base,
+          type: 'TextCode' as const,
+          text: slide.textCode?.text ?? '',
+          code: slide.textCode?.code ?? '',
+          language: slide.textCode?.language ?? '',
+        };
+      }),
+    };
   }
 }

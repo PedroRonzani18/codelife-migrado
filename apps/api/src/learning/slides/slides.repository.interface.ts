@@ -39,4 +39,6 @@ export interface ISlidesRepository {
   create(input: CreateSlideInput): Promise<SlideRecord>;
   update(id: string, input: UpdateSlideInput): Promise<SlideRecord>;
   delete(id: string): Promise<void>;
+  deleteByLevelId(levelId: string): Promise<void>;
+  getAdminDetail(id: string): Promise<import('@codelife/contracts/content-management').AdminSlideDetail | null>;
 }

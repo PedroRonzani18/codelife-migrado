@@ -9,10 +9,22 @@ export class IslandKeyParamDto {
   islandKey!: string;
 }
 
+export class IslandIdParamDto {
+  @ApiProperty({ format: 'uuid', description: 'UUID público da ilha.' })
+  @IsUUID()
+  islandId!: string;
+}
+
 export class LevelIdParamDto {
   @ApiProperty({ format: 'uuid', description: 'UUID público do nível.' })
   @IsUUID()
   levelId!: string;
+}
+
+export class SlideIdParamDto {
+  @ApiProperty({ format: 'uuid', description: 'UUID público do slide.' })
+  @IsUUID()
+  slideId!: string;
 }
 
 export class MediaAssetIdParamDto {

@@ -25,8 +25,13 @@ describe('LevelsService', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      getAdminDetail: jest.fn(),
     };
-    storage = { resolveControlledObject: jest.fn().mockResolvedValue('/controlled/asset.svg') };
+    storage = {
+      resolveControlledObject: jest.fn().mockResolvedValue('/controlled/asset.svg'),
+      writeMediaObject: jest.fn(),
+      deleteMediaObject: jest.fn(),
+    };
     progress = { snapshot: jest.fn().mockResolvedValue({ lastVisited: null, nextRecommended: null, islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levelCount: 1, progress: null, levels: [{ id: fixtureIds.levels[0], title: 'Variáveis', position: 1, availability: 'available', progress: null }] }] }) };
     service = new LevelsService(repository, storage, progress as unknown as ProgressService);
   });

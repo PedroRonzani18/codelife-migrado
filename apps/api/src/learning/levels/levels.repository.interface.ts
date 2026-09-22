@@ -61,4 +61,5 @@ export interface ILevelsRepository {
   create(input: CreateLevelInput): Promise<LevelRecord>;
   update(id: string, input: UpdateLevelInput): Promise<LevelRecord>;
   delete(id: string): Promise<void>;
+  getAdminDetail(id: string): Promise<import('@codelife/contracts/content-management').AdminLevelDetail | null>;
 }

@@ -16,6 +16,8 @@ describe('ProgressService', () => {
       completeLevel: jest.fn(),
       hasProgressForIsland: jest.fn(),
       hasProgressForLevel: jest.fn(),
+      highestIslandPositionWithProgress: jest.fn(),
+      highestLevelPositionWithProgress: jest.fn(),
     };
     service = new ProgressService(repository);
   });

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import type { AdminContentTree, AdminIslandDetail } from '@codelife/contracts/content-management';
 import type {
   CreateIslandInput,
   IIslandsRepository,
@@ -97,5 +98,90 @@ export class PrismaIslandsRepository implements IIslandsRepository {
     await this.prisma.island.delete({
       where: { id },
     });
+  }
+
+  async getAdminTree(): Promise<AdminContentTree> {
+    const islands = await this.prisma.island.findMany({
+      orderBy: { position: 'asc' },
+      include: {
+        levels: {
+          orderBy: { position: 'asc' },
+          include: {
+            slides: {
+              orderBy: { position: 'asc' },
+              include: {
+                textText: true,
+                textImage: true,
+                textCode: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return islands.map((island) => ({
+      id: island.id,
+      slug: island.slug,
+      title: island.title,
+      position: island.position,
+      publishedAt: island.publishedAt ? island.publishedAt.toISOString() : null,
+      updatedAt: island.updatedAt.toISOString(),
+      levels: island.levels.map((level) => ({
+        id: level.id,
+        islandId: level.islandId,
+        title: level.title,
+        position: level.position,
+        publishedAt: level.publishedAt ? level.publishedAt.toISOString() : null,
+        updatedAt: level.updatedAt.toISOString(),
+        slides: level.slides.map((slide) => {
+          const type = slide.textText ? 'TextText' : slide.textImage ? 'TextImage' : 'TextCode';
+          return {
+            id: slide.id,
+            levelId: slide.levelId,
+            title: slide.title,
+            position: slide.position,
+            type: type as 'TextText' | 'TextImage' | 'TextCode',
+            updatedAt: slide.updatedAt.toISOString(),
+          };
+        }),
+      })),
+    }));
+  }
+
+  async getAdminDetail(id: string): Promise<AdminIslandDetail | null> {
+    const island = await this.prisma.island.findUnique({
+      where: { id },
+      include: {
+        levels: {
+          orderBy: { position: 'asc' },
+          include: {
+            _count: { select: { slides: true } },
+          },
+        },
+      },
+    });
+    if (!island) return null;
+
+    return {
+      id: island.id,
+      slug: island.slug,
+      title: island.title,
+      position: island.position,
+      publishedAt: island.publishedAt ? island.publishedAt.toISOString() : null,
+      createdAt: island.createdAt.toISOString(),
+      updatedAt: island.updatedAt.toISOString(),
+      levelCount: island.levels.length,
+      levels: island.levels.map((level) => ({
+        id: level.id,
+        islandId: level.islandId,
+        title: level.title,
+        position: level.position,
+        publishedAt: level.publishedAt ? level.publishedAt.toISOString() : null,
+        createdAt: level.createdAt.toISOString(),
+        updatedAt: level.updatedAt.toISOString(),
+        slideCount: level._count.slides,
+      })),
+    };
   }
 }

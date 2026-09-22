@@ -121,4 +121,21 @@ export class PrismaProgressRepository implements IProgressRepository {
     });
     return count > 0;
   }
+
+  async highestIslandPositionWithProgress(): Promise<number | null> {
+    const record = await this.prisma.userIslandProgress.findFirst({
+      select: { island: { select: { position: true } } },
+      orderBy: { island: { position: 'desc' } },
+    });
+    return record?.island.position ?? null;
+  }
+
+  async highestLevelPositionWithProgress(islandId: string): Promise<number | null> {
+    const record = await this.prisma.userLevelProgress.findFirst({
+      where: { level: { islandId } },
+      select: { level: { select: { position: true } } },
+      orderBy: { level: { position: 'desc' } },
+    });
+    return record?.level.position ?? null;
+  }
 }
