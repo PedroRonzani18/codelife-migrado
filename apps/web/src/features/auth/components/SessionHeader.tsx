@@ -18,12 +18,20 @@ export function SessionHeader({ session, onLogout, isPending }: { session: AuthS
             Jornada
           </Link>
           {session.user.role === 'ADMIN' && (
-            <Link
-              to="/admin/users"
-              className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Administração
-            </Link>
+            <>
+              <Link
+                to="/admin/users"
+                className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Administração
+              </Link>
+              <Link
+                to="/admin/content"
+                className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Conteúdo
+              </Link>
+            </>
           )}
         </nav>
         <div className="flex items-center gap-3">

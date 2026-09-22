@@ -8,6 +8,7 @@ import { GoogleLogin } from '@/features/auth/GoogleLogin';
 import { SessionHeader } from '@/features/auth/components/SessionHeader';
 import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
 import { AdminRoute, AdminUsersView } from '@/features/admin-users';
+import { AdminContentView } from '@/features/admin-content';
 import { startGoogleLogin, useSessionMutations, useSessionQuery } from '@/features/auth';
 import IslandView from '@/modules/learning/views/IslandView';
 import LevelReaderView from '@/modules/learning/views/LevelReaderView';
@@ -53,6 +54,7 @@ export function AppRoutes() {
         <Route element={<AdminRoute />}>
           <Route element={<AppShell />}>
             <Route path="/admin/users" element={<AdminUsersView />} />
+            <Route path="/admin/content" element={<AdminContentView />} />
           </Route>
         </Route>
       </Route>
