@@ -4,7 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { apiErrorSchema } from '@codelife/contracts/errors';
-import { levelDetailSchema } from '@codelife/contracts/learning';
+import {
+  islandCatalogSchema,
+  islandDetailSchema,
+  levelDetailSchema,
+} from '@codelife/contracts/learning';
 import { progressSnapshotSchema } from '@codelife/contracts/progress';
 import { fixtureIds } from '../prisma/seed';
 import { AppModule } from '../src/app.module';
@@ -76,8 +80,32 @@ describe('authenticated learning progress (integration)', () => {
 
   it('reads content and an empty snapshot without creating progress', async () => {
     const session = await cookie();
+    const catalog = await request(app.getHttpServer()).get('/learning/islands').set('Cookie', session).expect(200);
+    const catalogItems = islandCatalogSchema.parse(catalog.body);
+    expect(catalogItems).toHaveLength(1);
+    expect(catalogItems[0]).toMatchObject({
+      id: fixtureIds.island,
+      slug: 'island-3',
+      position: 1,
+      levelCount: 3,
+      availability: 'available',
+    });
+
+    const island = await request(app.getHttpServer()).get('/learning/islands/island-3').set('Cookie', session).expect(200);
+    expect(islandDetailSchema.parse(island.body)).toMatchObject({
+      id: fixtureIds.island,
+      slug: 'island-3',
+      availability: 'available',
+      levelCount: 3,
+      levels: [
+        { id: fixtureIds.levels[0], position: 1, availability: 'available' },
+        { id: fixtureIds.levels[1], position: 2, availability: 'blocked' },
+        { id: fixtureIds.levels[2], position: 3, availability: 'blocked' },
+      ],
+    });
+
     const level = await request(app.getHttpServer()).get(`/learning/levels/${fixtureIds.levels[0]}`).set('Cookie', session).expect(200);
-    expect(levelDetailSchema.parse(level.body)).toMatchObject({ id: fixtureIds.levels[0], islandId: fixtureIds.island });
+    expect(levelDetailSchema.parse(level.body)).toMatchObject({ id: fixtureIds.levels[0], islandId: fixtureIds.island, position: 1, availability: 'available' });
     const response = await request(app.getHttpServer()).get('/progress').set('Cookie', session).expect(200);
     expect(progressSnapshotSchema.parse(response.body)).toMatchObject({ lastVisited: null, islands: [{ progress: null }] });
     expect(await prisma.userIslandProgress.count({ where: { userId: users.first } })).toBe(0);
@@ -149,5 +177,168 @@ describe('authenticated learning progress (integration)', () => {
     await start(await cookie(users.first), 0).expect(200);
     const second = progressSnapshotSchema.parse((await request(app.getHttpServer()).get('/progress').set('Cookie', await cookie(users.second)).expect(200)).body);
     expect(second.islands[0].progress).toBeNull();
+  });
+
+  it('enforces multi-island sequential progression, hides drafts and rejects blocked island access with ISLAND_BLOCKED', async () => {
+    const session = await cookie();
+    const secondIslandId = '00000000-0000-4000-8000-000000000020';
+    const secondLevelId = '00000000-0000-4000-8000-000000000201';
+    const secondSlideId = '00000000-0000-4000-8000-000000002001';
+    const draftIslandId = '00000000-0000-4000-8000-000000000099';
+    const draftLevelId = '00000000-0000-4000-8000-000000000599';
+    const draftSlideId = '00000000-0000-4000-8000-000000000799';
+
+    try {
+      await prisma.island.create({
+        data: {
+          id: secondIslandId,
+          slug: 'island-2',
+          title: 'Ilha 2',
+          position: 2,
+          publishedAt: new Date(),
+          levels: {
+            create: {
+              id: secondLevelId,
+              title: 'Nível 2.1',
+              position: 1,
+              publishedAt: new Date(),
+              slides: {
+                create: {
+                  id: secondSlideId,
+                  title: 'Slide 2.1.1',
+                  type: 'TextText',
+                  position: 1,
+                  textText: { create: { primaryText: 'Texto 2.1' } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      await prisma.island.create({
+        data: {
+          id: draftIslandId,
+          slug: 'island-draft',
+          title: 'Ilha Rascunho',
+          position: 3,
+          publishedAt: null,
+        },
+      });
+
+      await prisma.level.create({
+        data: {
+          id: draftLevelId,
+          islandId: fixtureIds.island,
+          title: 'Nível Rascunho',
+          position: 4,
+          publishedAt: null,
+          slides: {
+            create: {
+              id: draftSlideId,
+              title: 'Slide Rascunho',
+              type: 'TextText',
+              position: 1,
+              textText: { create: { primaryText: 'Texto Rascunho' } },
+            },
+          },
+        },
+      });
+
+      const catalogRes = await request(app.getHttpServer()).get('/learning/islands').set('Cookie', session).expect(200);
+      const catalog = islandCatalogSchema.parse(catalogRes.body);
+      expect(catalog).toEqual([
+        {
+          id: fixtureIds.island,
+          slug: 'island-3',
+          title: 'Interatividade',
+          position: 1,
+          levelCount: 3,
+          availability: 'available',
+        },
+        {
+          id: secondIslandId,
+          slug: 'island-2',
+          title: 'Ilha 2',
+          position: 2,
+          levelCount: 1,
+          availability: 'blocked',
+        },
+      ]);
+
+      const blockedIsland = await request(app.getHttpServer())
+        .get('/learning/islands/island-2')
+        .set('Cookie', session)
+        .expect(403);
+      expect(apiErrorSchema.parse(blockedIsland.body).code).toBe('ISLAND_BLOCKED');
+
+      const blockedLevel = await request(app.getHttpServer())
+        .get(`/learning/levels/${secondLevelId}`)
+        .set('Cookie', session)
+        .expect(403);
+      expect(apiErrorSchema.parse(blockedLevel.body).code).toBe('ISLAND_BLOCKED');
+
+      const blockedStart = await request(app.getHttpServer())
+        .post(`/progress/levels/${secondLevelId}/start`)
+        .set('Cookie', session)
+        .set('Origin', origin)
+        .send({})
+        .expect(403);
+      expect(apiErrorSchema.parse(blockedStart.body).code).toBe('ISLAND_BLOCKED');
+
+      await request(app.getHttpServer())
+        .get(`/learning/levels/${draftLevelId}`)
+        .set('Cookie', session)
+        .expect(404);
+
+      for (let i = 0; i < 3; i++) {
+        await start(session, i).expect(200);
+        await navigate(session, i, 1).expect(200);
+        await navigate(session, i, 2).expect(200);
+        await complete(session, i).expect(200);
+      }
+
+      const unlockedCatalogRes = await request(app.getHttpServer()).get('/learning/islands').set('Cookie', session).expect(200);
+      const unlockedCatalog = islandCatalogSchema.parse(unlockedCatalogRes.body);
+      expect(unlockedCatalog[0].availability).toBe('completed');
+      expect(unlockedCatalog[1].availability).toBe('available');
+
+      const secondIslandDetail = await request(app.getHttpServer())
+        .get('/learning/islands/island-2')
+        .set('Cookie', session)
+        .expect(200);
+      expect(islandDetailSchema.parse(secondIslandDetail.body)).toMatchObject({
+        id: secondIslandId,
+        slug: 'island-2',
+        availability: 'available',
+        levelCount: 1,
+      });
+
+      const secondLevelDetail = await request(app.getHttpServer())
+        .get(`/learning/levels/${secondLevelId}`)
+        .set('Cookie', session)
+        .expect(200);
+      expect(levelDetailSchema.parse(secondLevelDetail.body)).toMatchObject({
+        id: secondLevelId,
+        availability: 'available',
+        position: 1,
+      });
+
+      const completedIsland = await request(app.getHttpServer())
+        .get('/learning/islands/island-3')
+        .set('Cookie', session)
+        .expect(200);
+      expect(islandDetailSchema.parse(completedIsland.body)).toMatchObject({
+        id: fixtureIds.island,
+        availability: 'completed',
+      });
+    } finally {
+      await prisma.userLevelProgress.deleteMany({ where: { levelId: { in: [secondLevelId, draftLevelId] } } });
+      await prisma.userIslandProgress.deleteMany({ where: { islandId: { in: [secondIslandId, draftIslandId] } } });
+      await prisma.textTextSlide.deleteMany({ where: { slideId: { in: [secondSlideId, draftSlideId] } } });
+      await prisma.slide.deleteMany({ where: { id: { in: [secondSlideId, draftSlideId] } } });
+      await prisma.level.deleteMany({ where: { id: { in: [secondLevelId, draftLevelId] } } });
+      await prisma.island.deleteMany({ where: { id: { in: [secondIslandId, draftIslandId] } } });
+    }
   });
 });
