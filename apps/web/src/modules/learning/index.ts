@@ -3,5 +3,7 @@ export * from './hooks/useProgressMutations';
 export * from './selectors/selectLearning';
 export * from './services/learningService';
 export * from './services/progressService';
+export * from './components/IslandCard';
+export { IslandCatalogView } from './views/IslandCatalogView';
 export { default as IslandView } from './views/IslandView';
 export { default as LevelReaderView } from './views/LevelReaderView';

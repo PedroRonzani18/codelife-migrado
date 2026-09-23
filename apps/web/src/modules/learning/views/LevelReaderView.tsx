@@ -163,7 +163,7 @@ export default function LevelReaderView() {
           },
         }
       : !nextLevel
-        ? { label: 'Finalizar ilha', onAction: () => navigateRoute(`/ilhas/${slug}`) }
+        ? { label: 'Voltar ao catálogo', onAction: () => navigateRoute('/ilhas') }
         : undefined
     : undefined;
 
