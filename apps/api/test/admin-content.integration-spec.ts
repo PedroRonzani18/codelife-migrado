@@ -317,4 +317,86 @@ describe('administrative content & media API (integration)', () => {
       .set('Cookie', adminSession)
       .expect(404);
   });
+
+  it('handles island reordering, stale concurrency check, and enforces the protected prefix under student progress', async () => {
+    const adminSession = await cookie(testUsers.admin.id);
+
+    // Get existing islands (includes seed island-3)
+    const treeRes = await request(app.getHttpServer())
+      .get('/admin/content/tree')
+      .set('Cookie', adminSession)
+      .expect(200);
+    const initialTree = adminContentTreeSchema.parse(treeRes.body);
+    const existingIds = initialTree.map((i) => i.id);
+    const fixtureIslandId = existingIds[0];
+    expect(fixtureIslandId).toBeDefined();
+
+    // Create two draft test islands
+    const resA = await request(app.getHttpServer())
+      .post('/admin/content/islands')
+      .set('Cookie', adminSession)
+      .set('Origin', origin)
+      .send({ title: 'Test Island Alpha Reorder', slug: 'test-island-reorder-a' })
+      .expect(201);
+    const islandA = adminIslandDetailSchema.parse(resA.body);
+
+    const resB = await request(app.getHttpServer())
+      .post('/admin/content/islands')
+      .set('Cookie', adminSession)
+      .set('Origin', origin)
+      .send({ title: 'Test Island Beta Reorder', slug: 'test-island-reorder-b' })
+      .expect(201);
+    const islandB = adminIslandDetailSchema.parse(resB.body);
+
+    const reorderedIds = [...existingIds, islandB.id, islandA.id];
+
+    // 1. Stale check on reorder
+    const staleReorderRes = await request(app.getHttpServer())
+      .put('/admin/content/islands/order')
+      .set('Cookie', adminSession)
+      .set('Origin', origin)
+      .send({
+        islandIds: reorderedIds,
+        expectedUpdatedAts: {
+          [islandA.id]: '2020-01-01T00:00:00.000Z',
+        },
+      })
+      .expect(409);
+    expect(apiErrorSchema.parse(staleReorderRes.body).code).toBe('CONTENT_STALE');
+
+    // 2. Successful reorder beyond protected prefix (swapping island A and island B)
+    const validReorderRes = await request(app.getHttpServer())
+      .put('/admin/content/islands/order')
+      .set('Cookie', adminSession)
+      .set('Origin', origin)
+      .send({
+        islandIds: reorderedIds,
+      })
+      .expect(200);
+    expect(validReorderRes.body).toHaveLength(existingIds.length + 2);
+
+    // 3. Add progress for test student on fixture island
+    const firstLevel = await prisma.level.findFirst({ where: { islandId: fixtureIslandId } });
+    if (firstLevel) {
+      await prisma.userIslandProgress.create({
+        data: {
+          userId: testUsers.student.id,
+          islandId: fixtureIslandId,
+          currentLevelId: firstLevel.id,
+        },
+      });
+
+      // 4. Attempt to move fixtureIsland (which now has student progress) out of its protected position
+      const conflictingIds = [islandB.id, ...existingIds, islandA.id];
+      const conflictRes = await request(app.getHttpServer())
+        .put('/admin/content/islands/order')
+        .set('Cookie', adminSession)
+        .set('Origin', origin)
+        .send({
+          islandIds: conflictingIds,
+        })
+        .expect(409);
+      expect(apiErrorSchema.parse(conflictRes.body).code).toBe('CONTENT_ORDER_CONFLICT');
+    }
+  });
 });
