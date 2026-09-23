@@ -336,6 +336,11 @@ export function SlideForm({
                 {uploadError && (
                   <p className="mt-1 text-xs text-destructive">{uploadError}</p>
                 )}
+                {currentMediaAsset && !isUploading && (
+                  <p className="mt-1 text-xs text-emerald-600 font-medium">
+                    Imagem carregada: {currentMediaAsset.width}x{currentMediaAsset.height} ({currentMediaAsset.mimeType})
+                  </p>
+                )}
                 {errors.mediaAssetId && (
                   <p className="mt-1 text-xs text-destructive">{errors.mediaAssetId.message}</p>
                 )}
