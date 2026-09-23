@@ -10,14 +10,13 @@ import { ProtectedRoute } from '@/features/auth/routes/ProtectedRoute';
 import { AdminRoute, AdminUsersView } from '@/features/admin-users';
 import { AdminContentView } from '@/features/admin-content';
 import { startGoogleLogin, useSessionMutations, useSessionQuery } from '@/features/auth';
-import IslandView from '@/modules/learning/views/IslandView';
-import LevelReaderView from '@/modules/learning/views/LevelReaderView';
+import { IslandCatalogView, IslandView, LevelReaderView } from '@/modules/learning';
 
 function RootRoute() {
   const session = useSessionQuery();
   const unauthorized = session.error instanceof ApiClientError && session.error.status === 401;
   if (session.isLoading) return <PageContainer><LoadingState label="Verificando sessão…" /></PageContainer>;
-  if (session.data) return <Navigate to="/ilhas/island-3" replace />;
+  if (session.data) return <Navigate to="/ilhas" replace />;
   if (unauthorized) {
     return <GoogleLogin onLogin={startGoogleLogin} />;
   }
@@ -48,6 +47,7 @@ export function AppRoutes() {
       <Route path="/" element={<RootRoute />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
+          <Route path="/ilhas" element={<IslandCatalogView />} />
           <Route path="/ilhas/:islandSlug" element={<IslandView />} />
           <Route path="/ilhas/:islandSlug/niveis/:levelId/slides/:slideId" element={<LevelReaderView />} />
         </Route>
