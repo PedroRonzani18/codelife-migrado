@@ -1,10 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/shared/query';
-import { getIsland, getLevel } from '../services/learningService';
+import { getIsland, getIslandCatalog, getLevel } from '../services/learningService';
 import { getProgressSnapshot } from '../services/progressService';
 
-export function useIslandQuery(slug = 'island-3') {
-  return useQuery({ queryKey: queryKeys.learning.island(slug), queryFn: () => getIsland(slug), retry: false });
+export function useIslandCatalogQuery() {
+  return useQuery({
+    queryKey: queryKeys.learning.catalog,
+    queryFn: getIslandCatalog,
+    retry: false,
+  });
+}
+
+export function useIslandQuery(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.learning.island(slug),
+    queryFn: () => getIsland(slug),
+    enabled: Boolean(slug),
+    retry: false,
+  });
 }
 
 export function useLevelQuery(levelId: string, enabled = true) {

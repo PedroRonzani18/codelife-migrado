@@ -1,14 +1,14 @@
 import { stableKeySchema, uuidSchema } from '@codelife/contracts/common';
-import { islandDetailSchema, levelDetailSchema } from '@codelife/contracts/learning';
+import { islandCatalogSchema, islandDetailSchema, levelDetailSchema } from '@codelife/contracts/learning';
 import { apiFetchParsed, apiUrl } from '@/shared/http';
 
-export function getIsland(slug = 'island-3') {
-  const validSlug = stableKeySchema.parse(slug);
-  return apiFetchParsed(`/learning/islands/${encodeURIComponent(validSlug)}`, islandDetailSchema);
+export function getIslandCatalog() {
+  return apiFetchParsed('/learning/islands', islandCatalogSchema);
 }
 
-export function getExperimentalIsland() {
-  return getIsland('island-3');
+export function getIsland(slug: string) {
+  const validSlug = stableKeySchema.parse(slug);
+  return apiFetchParsed(`/learning/islands/${encodeURIComponent(validSlug)}`, islandDetailSchema);
 }
 
 export function getLevel(levelId: string) {

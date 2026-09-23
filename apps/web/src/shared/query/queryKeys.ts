@@ -8,6 +8,7 @@ export const queryKeys = {
   },
   learning: {
     all: ['learning'] as const,
+    catalog: ['learning', 'catalog'] as const,
     island: (slug: string) => ['learning', 'island', slug] as const,
     level: (levelId: string) => ['learning', 'level', levelId] as const,
   },

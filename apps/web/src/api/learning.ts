@@ -1,1 +1,1 @@
-export { getExperimentalIsland } from '@/modules/learning/services/learningService';
+export { getIsland, getIslandCatalog } from '@/modules/learning/services/learningService';
