@@ -130,7 +130,7 @@ describe('LevelReaderView', () => {
     vi.mocked(progressService.completeLevel).mockResolvedValue(completedSnapshot());
     renderReader(slideTwo, snapshot(slideTwo));
     await userEvent.click(screen.getByRole('button', { name: /concluir nível/i }));
-    expect(await screen.findByRole('button', { name: /finalizar ilha/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /voltar ao catálogo/i })).toBeInTheDocument();
   });
 
   it('offers the next level after a non-final level is completed', async () => {

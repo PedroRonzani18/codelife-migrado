@@ -38,8 +38,8 @@ test('USER cannot access the user administration route', async ({ page }) => {
   }]);
 
   await page.goto('/admin/users');
-  await expect(page).toHaveURL(/\/ilhas\/island-3$/);
-  await expect(page.getByRole('heading', { name: 'Interatividade' })).toBeVisible();
+  await expect(page).toHaveURL(/\/ilhas$/);
+  await expect(page.getByRole('heading', { name: 'Ilhas de Aprendizado' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Administração' })).not.toBeVisible();
 });
 

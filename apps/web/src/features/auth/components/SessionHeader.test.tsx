@@ -20,7 +20,8 @@ describe('SessionHeader', () => {
   it('shows the journey and logout, but no administrative action, for USER', () => {
     renderHeader('USER');
 
-    expect(screen.getByRole('link', { name: 'Jornada' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Jornada' })).toHaveAttribute('href', '/ilhas');
+    expect(screen.getByRole('link', { name: /CodeLife/ })).toHaveAttribute('href', '/ilhas');
     expect(screen.queryByRole('link', { name: 'Administração' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Conteúdo' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument();
