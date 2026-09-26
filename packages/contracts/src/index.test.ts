@@ -1,18 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import {
-  apiErrorCodeSchema,
-  apiErrorSchema,
+  adminContentTreeSchema,
+  adminIslandTreeItemSchema,
+  adminLevelTreeItemSchema,
+  adminSlideTreeItemSchema,
   adminUserSchema,
   adminUsersSchema,
+  apiErrorCodeSchema,
+  apiErrorSchema,
   authSessionSchema,
   completeLevelInputSchema,
+  createSlideInputSchema,
+  islandCatalogItemSchema,
+  islandCatalogSchema,
   islandDetailSchema,
   levelDetailSchema,
   progressSnapshotSchema,
+  publishContentInputSchema,
+  reorderIslandsInputSchema,
   slideSchema,
   stableKeySchema,
   startLevelInputSchema,
   updateCurrentSlideInputSchema,
+  updateSlideInputSchema,
   updateUserRoleInputSchema,
   userRoleSchema,
   uuidSchema,
@@ -86,8 +96,85 @@ describe('shared contracts', () => {
     expect(startLevelInputSchema.safeParse({ status: 'started' }).success).toBe(false);
   });
 
-  it('exposes stable API errors, including an unstarted level', () => {
+  it('exposes stable API errors, including content administration and blocking errors', () => {
     expect(apiErrorCodeSchema.parse('LEVEL_NOT_STARTED')).toBe('LEVEL_NOT_STARTED');
-    expect(apiErrorSchema.parse({ statusCode: 409, code: 'LEVEL_NOT_STARTED', message: 'Não iniciado', requestId: 'request-id' })).toMatchObject({ code: 'LEVEL_NOT_STARTED' });
+    expect(apiErrorCodeSchema.parse('ISLAND_BLOCKED')).toBe('ISLAND_BLOCKED');
+    expect(apiErrorCodeSchema.parse('CONTENT_STALE')).toBe('CONTENT_STALE');
+    expect(apiErrorCodeSchema.parse('CONTENT_HAS_PROGRESS')).toBe('CONTENT_HAS_PROGRESS');
+    expect(apiErrorCodeSchema.parse('CONTENT_NOT_DRAFT')).toBe('CONTENT_NOT_DRAFT');
+    expect(apiErrorCodeSchema.parse('CONTENT_NOT_PUBLISHABLE')).toBe('CONTENT_NOT_PUBLISHABLE');
+    expect(apiErrorCodeSchema.parse('CONTENT_ORDER_CONFLICT')).toBe('CONTENT_ORDER_CONFLICT');
+    expect(apiErrorSchema.parse({ statusCode: 409, code: 'CONTENT_STALE', message: 'Dado desatualizado', requestId: 'req-1' })).toMatchObject({ code: 'CONTENT_STALE' });
+  });
+
+  it('models the sequential island catalog with availability', () => {
+    const catalogItem = {
+      id: ids.island,
+      slug: 'island-3',
+      title: 'Interatividade',
+      position: 1,
+      levelCount: 3,
+      availability: 'available' as const,
+    };
+    expect(islandCatalogItemSchema.parse(catalogItem)).toEqual(catalogItem);
+    expect(islandCatalogSchema.parse([catalogItem])).toEqual([catalogItem]);
+    expect(islandCatalogItemSchema.safeParse({ ...catalogItem, availability: 'unknown' }).success).toBe(false);
+  });
+
+  it('models administrative content tree and details', () => {
+    const slideTreeItem = {
+      id: ids.slide,
+      levelId: ids.level,
+      title: 'Variáveis',
+      position: 1,
+      type: 'TextText' as const,
+      updatedAt: '2026-09-21T12:00:00.000Z',
+    };
+    const levelTreeItem = {
+      id: ids.level,
+      islandId: ids.island,
+      title: 'Nível 1',
+      position: 1,
+      publishedAt: '2026-09-21T12:00:00.000Z',
+      updatedAt: '2026-09-21T12:00:00.000Z',
+      slides: [slideTreeItem],
+    };
+    const islandTreeItem = {
+      id: ids.island,
+      slug: 'island-3',
+      title: 'Interatividade',
+      position: 1,
+      publishedAt: '2026-09-21T12:00:00.000Z',
+      updatedAt: '2026-09-21T12:00:00.000Z',
+      levels: [levelTreeItem],
+    };
+    expect(adminSlideTreeItemSchema.parse(slideTreeItem)).toEqual(slideTreeItem);
+    expect(adminLevelTreeItemSchema.parse(levelTreeItem)).toEqual(levelTreeItem);
+    expect(adminIslandTreeItemSchema.parse(islandTreeItem)).toEqual(islandTreeItem);
+    expect(adminContentTreeSchema.parse([islandTreeItem])).toEqual([islandTreeItem]);
+  });
+
+  it('validates discriminated creation and updates for all slide types', () => {
+    const createTextText = { type: 'TextText' as const, title: 'T1', primaryText: 'P1', secondaryText: null };
+    const createTextImage = { type: 'TextImage' as const, title: 'T2', text: 'Txt', mediaAssetId: ids.media, altText: 'Alt' };
+    const createTextCode = { type: 'TextCode' as const, title: 'T3', text: 'Txt', code: 'x = 1', language: 'python' };
+    expect(createSlideInputSchema.parse(createTextText)).toEqual(createTextText);
+    expect(createSlideInputSchema.parse(createTextImage)).toEqual(createTextImage);
+    expect(createSlideInputSchema.parse(createTextCode)).toEqual(createTextCode);
+
+    const now = '2026-09-21T12:00:00.000Z';
+    const updateTextText = { type: 'TextText' as const, title: 'Novo', expectedUpdatedAt: now };
+    expect(updateSlideInputSchema.parse(updateTextText)).toEqual(updateTextText);
+    expect(updateSlideInputSchema.safeParse({ ...updateTextText, expectedUpdatedAt: 'invalid-date' }).success).toBe(false);
+  });
+
+  it('validates reordering and publishing schemas with strict keys', () => {
+    const reorder = { islandIds: [ids.island] };
+    expect(reorderIslandsInputSchema.parse(reorder)).toEqual(reorder);
+    expect(reorderIslandsInputSchema.safeParse({ islandIds: [] }).success).toBe(false);
+    expect(publishContentInputSchema.parse({})).toEqual({});
+    expect(publishContentInputSchema.parse({ expectedUpdatedAt: '2026-09-21T12:00:00.000Z' })).toEqual({
+      expectedUpdatedAt: '2026-09-21T12:00:00.000Z',
+    });
   });
 });

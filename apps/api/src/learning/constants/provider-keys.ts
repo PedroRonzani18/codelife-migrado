@@ -4,6 +4,8 @@ export const LEARNING_PROVIDER_KEYS = {
   LEVELS_REPOSITORY: 'ILevelsRepository',
   MEDIA_REPOSITORY: 'IMediaRepository',
   PROGRESS_REPOSITORY: 'IProgressRepository',
+  SLIDES_REPOSITORY: 'ISlidesRepository',
+  CONTENT_TRANSACTION_RUNNER: 'IContentTransactionRunner',
   OBJECT_STORAGE: 'IObjectStorage',
 } as const;
 

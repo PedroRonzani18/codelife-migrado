@@ -16,8 +16,15 @@ describe('MediaService', () => {
         objectKey: 'learning/island-3/variables.svg',
         mimeType: 'image/svg+xml',
       }),
+      findById: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
     };
-    storage = { resolveControlledObject: jest.fn().mockResolvedValue('/controlled/variables.svg') };
+    storage = {
+      resolveControlledObject: jest.fn().mockResolvedValue('/controlled/variables.svg'),
+      writeMediaObject: jest.fn(),
+      deleteMediaObject: jest.fn(),
+    };
     service = new MediaService(repository, storage);
   });
 

@@ -16,6 +16,7 @@ export interface JourneyLevelRecord {
   id: string;
   title: string;
   position: number;
+  publishedAt?: Date | null;
   slides: JourneySlideRecord[];
 }
 
@@ -31,6 +32,8 @@ export interface JourneyIslandRecord {
   id: string;
   slug: string;
   title: string;
+  position?: number;
+  publishedAt?: Date | null;
   levels: JourneyLevelRecord[];
   progress: JourneyIslandProgressRecord | null;
 }
@@ -64,4 +67,8 @@ export interface IProgressRepository {
   startLevel(input: StartLevelProgressInput): Promise<void>;
   setCurrentSlide(input: SetCurrentSlideInput): Promise<void>;
   completeLevel(input: CompleteLevelProgressInput): Promise<boolean>;
+  hasProgressForIsland(islandId: string): Promise<boolean>;
+  hasProgressForLevel(levelId: string): Promise<boolean>;
+  highestIslandPositionWithProgress(): Promise<number | null>;
+  highestLevelPositionWithProgress(islandId: string): Promise<number | null>;
 }

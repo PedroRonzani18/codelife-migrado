@@ -190,13 +190,45 @@ async function seedSlide(transaction: Prisma.TransactionClient, definition: Fixt
 export async function seedExperimentalFixture(prisma: PrismaClient): Promise<void> {
   await assertFixtureAssets();
   await prisma.$transaction(async (transaction) => {
-    await transaction.user.upsert({ where: { key: 'aluna-demo' }, update: { username: 'aluna.demo', displayName: 'Aluna Demo' }, create: { id: fixtureIds.user, key: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo' } });
-    for (const asset of localAssets) await transaction.mediaAsset.upsert({ where: { objectKey: asset.objectKey }, update: { mimeType: asset.mimeType, width: asset.width, height: asset.height }, create: asset });
-    await transaction.island.upsert({ where: { slug: islandFixture.slug }, update: { title: islandFixture.title }, create: { id: fixtureIds.island, slug: islandFixture.slug, title: islandFixture.title } });
+    await transaction.user.upsert({
+      where: { key: 'aluna-demo' },
+      update: { username: 'aluna.demo', displayName: 'Aluna Demo' },
+      create: { id: fixtureIds.user, key: 'aluna-demo', username: 'aluna.demo', displayName: 'Aluna Demo' },
+    });
+
+    const islandCount = await transaction.island.count();
+    if (islandCount > 0) {
+      console.info(
+        `Conteúdo já existente (${islandCount} ilha(s) encontrada(s)); bootstrap de conteúdo e mídia ignorado com segurança.`,
+      );
+      return;
+    }
+
+    for (const asset of localAssets) {
+      await transaction.mediaAsset.upsert({
+        where: { objectKey: asset.objectKey },
+        update: { mimeType: asset.mimeType, width: asset.width, height: asset.height },
+        create: asset,
+      });
+    }
+
+    const now = new Date();
+    await transaction.island.upsert({
+      where: { slug: islandFixture.slug },
+      update: { title: islandFixture.title, position: 1, publishedAt: now },
+      create: { id: fixtureIds.island, slug: islandFixture.slug, title: islandFixture.title, position: 1, publishedAt: now },
+    });
+
     for (const [levelIndex, levelDefinition] of islandFixture.levels.entries()) {
       const levelId = fixtureIds.levels[levelIndex];
-      await transaction.level.upsert({ where: { id: levelId }, update: { islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1 }, create: { id: levelId, islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1 } });
-      for (const [slideIndex, slideDefinition] of levelDefinition.slides.entries()) await seedSlide(transaction, slideDefinition, levelId, levelIndex * levelDefinition.slides.length + slideIndex);
+      await transaction.level.upsert({
+        where: { id: levelId },
+        update: { islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1, publishedAt: now },
+        create: { id: levelId, islandId: fixtureIds.island, title: levelDefinition.title, position: levelIndex + 1, publishedAt: now },
+      });
+      for (const [slideIndex, slideDefinition] of levelDefinition.slides.entries()) {
+        await seedSlide(transaction, slideDefinition, levelId, levelIndex * levelDefinition.slides.length + slideIndex);
+      }
     }
     assertFixtureIntegrity(await readFixtureSnapshot(transaction));
   });

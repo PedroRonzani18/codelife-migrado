@@ -19,7 +19,7 @@ function renderRoute(role: AuthSession['user']['role']) {
         <Route element={<AdminRoute />}>
           <Route path="/admin/users" element={<p>Admin screen</p>} />
         </Route>
-        <Route path="/ilhas/island-3" element={<p>Journey screen</p>} />
+        <Route path="/ilhas" element={<p>Journey screen</p>} />
       </Routes>
     </MemoryRouter>,
   );

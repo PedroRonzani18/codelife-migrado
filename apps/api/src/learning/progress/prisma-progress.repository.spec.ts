@@ -23,8 +23,15 @@ describe('PrismaProgressRepository', () => {
     const { prisma, repository } = setup();
     const findMany = prisma.island.findMany as jest.Mock;
     findMany.mockResolvedValue([{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: [] }]);
-    await expect(repository.journeyForUser(fixtureIds.user)).resolves.toEqual({ islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: null }] });
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { slug: 'asc' } }));
+    await expect(repository.journeyForUser(fixtureIds.user)).resolves.toEqual({
+      islands: [{ id: fixtureIds.island, slug: 'island-3', title: 'Interatividade', levels: [], progress: null }],
+    });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { position: 'asc' },
+        where: { publishedAt: { not: null } },
+      }),
+    );
   });
 
   it('starts island and level progress transactionally', async () => {
@@ -41,5 +48,18 @@ describe('PrismaProgressRepository', () => {
     (prisma.userLevelProgress.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
     await expect(repository.completeLevel({ levelProgressId: 'level-progress', currentSlideId: fixtureIds.slides[2], completedAt: new Date('2026-08-20T12:00:00.000Z') })).resolves.toBe(true);
     expect(prisma.userLevelProgress.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'level-progress', currentSlideId: fixtureIds.slides[2], completedAt: null } }));
+  });
+
+  it('checks progress and highest positions', async () => {
+    const { prisma, repository } = setup();
+    prisma.userIslandProgress.count = jest.fn().mockResolvedValue(1);
+    prisma.userLevelProgress.count = jest.fn().mockResolvedValue(0);
+    prisma.userIslandProgress.findFirst = jest.fn().mockResolvedValue({ island: { position: 3 } });
+    prisma.userLevelProgress.findFirst = jest.fn().mockResolvedValue({ level: { position: 2 } });
+
+    await expect(repository.hasProgressForIsland('island-1')).resolves.toBe(true);
+    await expect(repository.hasProgressForLevel('level-1')).resolves.toBe(false);
+    await expect(repository.highestIslandPositionWithProgress()).resolves.toBe(3);
+    await expect(repository.highestLevelPositionWithProgress('island-1')).resolves.toBe(2);
   });
 });

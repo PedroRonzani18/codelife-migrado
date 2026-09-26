@@ -24,6 +24,29 @@ export const levelAvailabilitySchema = z.enum([
 ]);
 export type LevelAvailability = z.infer<typeof levelAvailabilitySchema>;
 
+export const islandAvailabilitySchema = z.enum([
+  'available',
+  'in_progress',
+  'blocked',
+  'completed',
+]);
+export type IslandAvailability = z.infer<typeof islandAvailabilitySchema>;
+
+export const islandCatalogItemSchema = z
+  .object({
+    id: uuidSchema,
+    slug: stableKeySchema,
+    title: z.string().min(1),
+    position: positivePositionSchema,
+    levelCount: z.number().int().nonnegative(),
+    availability: islandAvailabilitySchema,
+  })
+  .strict();
+export type IslandCatalogItem = z.infer<typeof islandCatalogItemSchema>;
+
+export const islandCatalogSchema = z.array(islandCatalogItemSchema);
+export type IslandCatalog = z.infer<typeof islandCatalogSchema>;
+
 export const levelSummarySchema = z
   .object({
     id: uuidSchema,
@@ -95,6 +118,7 @@ export type Slide = z.infer<typeof slideSchema>;
 
 export const islandDetailSchema = islandSummarySchema
   .extend({
+    availability: islandAvailabilitySchema.optional(),
     levels: z.array(levelSummarySchema),
   })
   .strict();

@@ -5,7 +5,7 @@ export function AdminRoute() {
   const session = useSessionQuery();
 
   if (!session.data) return null;
-  if (session.data.user.role !== 'ADMIN') return <Navigate to="/ilhas/island-3" replace />;
+  if (session.data.user.role !== 'ADMIN') return <Navigate to="/ilhas" replace />;
 
   return <Outlet />;
 }

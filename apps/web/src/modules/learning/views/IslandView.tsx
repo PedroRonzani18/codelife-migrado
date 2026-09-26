@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { stableKeySchema } from '@codelife/contracts/common';
+import { Button } from '@/components/ui/button';
 import { ApiClientError, domainErrorMessage } from '@/shared/http';
 import { FeedbackAlert, LoadingState, PageContainer, RouteErrorState } from '@/shared/components';
 import { IslandJourneyPath } from '../components/IslandJourneyPath';
@@ -23,7 +25,24 @@ export default function IslandView() {
   const queryError = island.error ?? snapshot.error;
   if (queryError) {
     const error = queryError instanceof ApiClientError ? queryError : undefined;
-    return <PageContainer><RouteErrorState description={error ? domainErrorMessage(error.code) : 'Não foi possível carregar a jornada.'} requestId={error?.requestId} onRetry={() => { void island.refetch(); void snapshot.refetch(); }} /></PageContainer>;
+    const isBlocked = error?.code === 'ISLAND_BLOCKED';
+    return (
+      <PageContainer className="py-10 sm:py-14 space-y-6">
+        <RouteErrorState
+          title={isBlocked ? 'Ilha bloqueada' : 'Não foi possível carregar a jornada'}
+          description={error ? domainErrorMessage(error.code) : 'Não foi possível carregar a jornada.'}
+          requestId={error?.requestId}
+          onRetry={isBlocked ? undefined : () => { void island.refetch(); void snapshot.refetch(); }}
+        />
+        {isBlocked && (
+          <div className="flex justify-center">
+            <Button asChild variant="default">
+              <Link to="/ilhas">Voltar ao catálogo de ilhas</Link>
+            </Button>
+          </div>
+        )}
+      </PageContainer>
+    );
   }
 
   const levels = selectIslandJourney(island.data, snapshot.data);
@@ -46,7 +65,10 @@ export default function IslandView() {
 
   return (
     <PageContainer className="py-10 sm:py-14">
-      <IslandJourneyPath title={island.data?.title ?? 'Interatividade'} levels={levels} isPending={start.isPending} onOpenLevel={openLevel} />
+      <Button asChild variant="ghost" size="sm" className="mb-6">
+        <Link to="/ilhas"><ArrowLeft aria-hidden="true" /> Todas as ilhas</Link>
+      </Button>
+      <IslandJourneyPath title={island.data?.title ?? 'Jornada'} levels={levels} isPending={start.isPending} onOpenLevel={openLevel} />
       {startError && <FeedbackAlert className="mt-5" kind="error" title="Não foi possível iniciar o nível" description={domainErrorMessage(startError.code)} requestId={startError.requestId} />}
     </PageContainer>
   );

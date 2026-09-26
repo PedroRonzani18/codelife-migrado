@@ -17,7 +17,10 @@ export function useStartLevelMutation() {
     mutationFn: (levelId: string) => startLevel(levelId),
     retry: 0,
     throwOnError: false,
-    onSuccess: (data) => queryClient.setQueryData(queryKeys.progress.snapshot, data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.progress.snapshot, data);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.learning.catalog });
+    },
   });
 }
 
@@ -37,6 +40,9 @@ export function useCompleteLevelMutation() {
     mutationFn: (levelId: string) => completeLevel(levelId),
     retry: 0,
     throwOnError: false,
-    onSuccess: (data) => queryClient.setQueryData(queryKeys.progress.snapshot, data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.progress.snapshot, data);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.learning.catalog });
+    },
   });
 }

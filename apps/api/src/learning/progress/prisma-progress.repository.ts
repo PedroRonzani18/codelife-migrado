@@ -13,17 +13,22 @@ export class PrismaProgressRepository implements IProgressRepository {
 
   async journeyForUser(userId: string) {
     const islands = await this.prisma.island.findMany({
-      orderBy: { slug: 'asc' },
+      where: { publishedAt: { not: null } },
+      orderBy: { position: 'asc' },
       select: {
         id: true,
         slug: true,
         title: true,
+        position: true,
+        publishedAt: true,
         levels: {
+          where: { publishedAt: { not: null } },
           orderBy: { position: 'asc' },
           select: {
             id: true,
             title: true,
             position: true,
+            publishedAt: true,
             slides: { orderBy: { position: 'asc' }, select: { id: true, position: true } },
           },
         },
@@ -106,5 +111,36 @@ export class PrismaProgressRepository implements IProgressRepository {
       data: { completedAt: input.completedAt },
     });
     return result.count === 1;
+  }
+
+  async hasProgressForIsland(islandId: string): Promise<boolean> {
+    const count = await this.prisma.userIslandProgress.count({
+      where: { islandId },
+    });
+    return count > 0;
+  }
+
+  async hasProgressForLevel(levelId: string): Promise<boolean> {
+    const count = await this.prisma.userLevelProgress.count({
+      where: { levelId },
+    });
+    return count > 0;
+  }
+
+  async highestIslandPositionWithProgress(): Promise<number | null> {
+    const record = await this.prisma.userIslandProgress.findFirst({
+      select: { island: { select: { position: true } } },
+      orderBy: { island: { position: 'desc' } },
+    });
+    return record?.island.position ?? null;
+  }
+
+  async highestLevelPositionWithProgress(islandId: string): Promise<number | null> {
+    const record = await this.prisma.userLevelProgress.findFirst({
+      where: { level: { islandId } },
+      select: { level: { select: { position: true } } },
+      orderBy: { level: { position: 'desc' } },
+    });
+    return record?.level.position ?? null;
   }
 }

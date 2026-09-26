@@ -35,7 +35,7 @@ export default function LevelReaderView() {
   const navigateSlide = useNavigateToSlideMutation();
   const complete = useCompleteLevelMutation();
   const [commandError, setCommandError] = useState<ApiClientError | null>(null);
-  const [completedMessage, setCompletedMessage] = useState(false);
+  const [completedMessageLevelId, setCompletedMessageLevelId] = useState<string | null>(null);
   const lastAutomaticAttempt = useRef<string | null>(null);
   const lastStartAttempt = useRef<string | null>(null);
   const pendingRouteTarget = useRef<string | null>(null);
@@ -148,6 +148,7 @@ export default function LevelReaderView() {
       ? {
           label: 'Ir para o próximo nível',
           onAction: () => {
+            setCompletedMessageLevelId(null);
             if (nextLevel.progress) {
               navigateRoute(slidePath(nextLevel.progress.currentSlideId));
               return;
@@ -163,7 +164,7 @@ export default function LevelReaderView() {
           },
         }
       : !nextLevel
-        ? { label: 'Finalizar ilha', onAction: () => navigateRoute(`/ilhas/${slug}`) }
+        ? { label: 'Voltar ao catálogo', onAction: () => navigateRoute('/ilhas') }
         : undefined
     : undefined;
 
@@ -182,7 +183,7 @@ export default function LevelReaderView() {
       <Progress value={displayedSlide.position} max={level.data.slides.length} aria-label={`Slide ${displayedSlide.position} de ${level.data.slides.length}`} />
       <p className="mt-2 text-right text-xs text-muted-foreground">Slide {displayedSlide.position} de {level.data.slides.length}</p>
       {commandError && <FeedbackAlert focusRef={alertRef} className="mt-5" kind="error" title="Progresso não alterado" description={domainErrorMessage(commandError.code)} requestId={commandError.requestId} />}
-      {completedMessage && <FeedbackAlert className="mt-5" kind="success" title="Nível concluído" description="Conclusão registrada. Escolha a próxima ação abaixo." />}
+      {completedMessageLevelId === levelId && <FeedbackAlert className="mt-5" kind="success" title="Nível concluído" description="Conclusão registrada. Escolha a próxima ação abaixo." />}
       <Card className="mt-6 min-h-[28rem]">
         <CardHeader>
           <h1 ref={headingRef} tabIndex={-1} className="text-balance text-3xl font-bold tracking-tight outline-none sm:text-4xl">{displayedSlide.title}</h1>
@@ -200,7 +201,7 @@ export default function LevelReaderView() {
             onPrevious={() => displayedSlide.previousSlideId && persistAndOpen(displayedSlide.previousSlideId)}
             onNext={() => displayedSlide.nextSlideId && persistAndOpen(displayedSlide.nextSlideId)}
             onComplete={() => complete.mutate(levelId, {
-              onSuccess: () => { setCommandError(null); setCompletedMessage(true); },
+              onSuccess: () => { setCommandError(null); setCompletedMessageLevelId(levelId); },
               onError: (error) => setCommandError(error instanceof ApiClientError ? error : null),
             })}
           />
