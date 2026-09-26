@@ -29,4 +29,3 @@ export function GetIslandEndpoint() {
     ApiResponse({ status: 404, description: 'Ilha não encontrada.' }),
   );
 }
-

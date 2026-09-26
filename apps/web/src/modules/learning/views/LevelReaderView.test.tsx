@@ -34,6 +34,17 @@ const level: LevelDetail = {
   ],
 };
 
+const nextLevelDetail: LevelDetail = {
+  id: nextLevelId,
+  islandId,
+  title: 'Funções',
+  position: 2,
+  availability: 'in_progress',
+  slides: [
+    { id: nextSlideId, title: 'Primeira função', position: 1, previousSlideId: null, nextSlideId: null, type: 'TextText', primaryText: 'Conteúdo do próximo nível', secondaryText: null },
+  ],
+};
+
 function snapshot(currentSlideId: string): ProgressSnapshot {
   return {
     lastVisited: { islandId, levelId, slideId: currentSlideId },
@@ -67,6 +78,23 @@ function completedSnapshot(nextLevel = false): ProgressSnapshot {
   };
 }
 
+function startedNextLevelSnapshot(): ProgressSnapshot {
+  const completed = completedSnapshot(true);
+  return {
+    ...completed,
+    lastVisited: { islandId, levelId: nextLevelId, slideId: nextSlideId },
+    nextRecommended: { levelId: nextLevelId, slideId: nextSlideId },
+    islands: [{
+      ...completed.islands[0],
+      progress: { currentLevelId: nextLevelId, startedAt: '2026-08-22T10:00:00.000Z' },
+      levels: [
+        completed.islands[0].levels[0],
+        { id: nextLevelId, title: nextLevelDetail.title, position: 2, availability: 'in_progress', progress: { currentSlideId: nextSlideId, startedAt: '2026-08-22T11:05:00.000Z', completedAt: null } },
+      ],
+    }],
+  };
+}
+
 function notStartedSnapshot(): ProgressSnapshot {
   return {
     ...snapshot(slideOne),
@@ -84,6 +112,7 @@ function renderReader(initialSlideId = slideOne, initialSnapshot = snapshot(slid
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: 0 } } });
   client.setQueryData(queryKeys.progress.snapshot, initialSnapshot);
   client.setQueryData(queryKeys.learning.level(levelId), level);
+  client.setQueryData(queryKeys.learning.level(nextLevelId), nextLevelDetail);
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[`/ilhas/island-3/niveis/${levelId}/slides/${initialSlideId}`]}>
@@ -138,5 +167,19 @@ describe('LevelReaderView', () => {
     renderReader(slideTwo, snapshot(slideTwo));
     await userEvent.click(screen.getByRole('button', { name: /concluir nível/i }));
     expect(await screen.findByRole('button', { name: /ir para o próximo nível/i })).toBeInTheDocument();
+  });
+
+  it('does not carry the completion alert into the next level', async () => {
+    vi.mocked(progressService.completeLevel).mockResolvedValue(completedSnapshot(true));
+    vi.mocked(progressService.startLevel).mockResolvedValue(startedNextLevelSnapshot());
+    renderReader(slideTwo, snapshot(slideTwo));
+
+    await userEvent.click(screen.getByRole('button', { name: /concluir nível/i }));
+    expect(await screen.findByText('Conclusão registrada. Escolha a próxima ação abaixo.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /ir para o próximo nível/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Primeira função' })).toBeInTheDocument();
+    expect(screen.queryByText('Conclusão registrada. Escolha a próxima ação abaixo.')).not.toBeInTheDocument();
+    expect(screen.getByText('Em andamento')).toBeInTheDocument();
   });
 });

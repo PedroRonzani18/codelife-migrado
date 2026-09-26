@@ -73,4 +73,3 @@ describe('IslandsService', () => {
     await expect(service.islandDetail('user-id', 'island-2')).rejects.toThrow(ForbiddenException);
   });
 });
-
