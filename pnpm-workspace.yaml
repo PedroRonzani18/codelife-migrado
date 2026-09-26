@@ -15,6 +15,8 @@ minimumReleaseAgeExclude:
   - '@testing-library/user-event@14.6.6'
 
 overrides:
+  '@istanbuljs/load-nyc-config>js-yaml': 3.15.2
+  'cosmiconfig>js-yaml': 4.3.2
   deepmerge-ts: 8.0.1
   lodash: 4.18.1
   fast-uri: 3.1.6

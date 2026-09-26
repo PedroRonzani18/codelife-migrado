@@ -37,14 +37,18 @@ describe('AdminSlidesService', () => {
     updatedAt: new Date('2026-09-01T00:00:00.000Z'),
   };
 
-  const sampleDetail = {
+  const sampleDetailBase = {
     id: 'slide-1',
     levelId: 'level-1',
     title: 'Slide 1',
-    type: 'TextText' as const,
     position: 1,
     createdAt: '2026-09-01T00:00:00.000Z',
     updatedAt: '2026-09-01T00:00:00.000Z',
+  };
+
+  const sampleDetail = {
+    ...sampleDetailBase,
+    type: 'TextText' as const,
     primaryText: 'Texto 1',
     secondaryText: null,
   };
@@ -96,6 +100,12 @@ describe('AdminSlidesService', () => {
   });
 
   describe('create', () => {
+    it('rejects creation in a missing level before writing', async () => {
+      levelsRepo.findById.mockResolvedValue(null);
+      await expect(service.create('missing', { type: 'TextText', title: 'Slide', primaryText: 'Texto' })).rejects.toThrow(NotFoundException);
+      expect(slidesRepo.create).not.toHaveBeenCalled();
+    });
+
     it('creates slide with sequential position and subtype data', async () => {
       levelsRepo.findById.mockResolvedValue(sampleLevel);
       progressRepo.hasProgressForLevel.mockResolvedValue(false);
@@ -145,9 +155,54 @@ describe('AdminSlidesService', () => {
         }),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('creates a TextImage slide only when its media asset exists', async () => {
+      levelsRepo.findById.mockResolvedValue(sampleLevel);
+      progressRepo.hasProgressForLevel.mockResolvedValue(false);
+      mediaRepo.findById.mockResolvedValue({ id: 'media-1' } as Awaited<ReturnType<IMediaRepository['findById']>>);
+      slidesRepo.countByLevelId.mockResolvedValue(1);
+      slidesRepo.create.mockResolvedValue({ ...sampleSlide, type: 'TextImage' });
+      slidesRepo.getAdminDetail.mockResolvedValue({
+        ...sampleDetailBase, type: 'TextImage', text: 'Texto', altText: 'Alt', mediaAssetId: 'media-1',
+        mediaAsset: { id: 'media-1', objectKey: 'key', mimeType: 'image/webp', sizeBytes: 10, width: 2, height: 3, checksum: 'abc' },
+      });
+
+      const result = await service.create('level-1', {
+        type: 'TextImage', title: 'Imagem', text: 'Texto', altText: 'Alt', mediaAssetId: 'media-1',
+      });
+      expect(slidesRepo.create).toHaveBeenCalledWith(expect.objectContaining({
+        position: 2, type: 'TextImage', textImage: { text: 'Texto', altText: 'Alt', mediaAssetId: 'media-1' },
+      }));
+      expect(result?.type).toBe('TextImage');
+    });
+
+    it('persists TextCode content in the matching subtype', async () => {
+      levelsRepo.findById.mockResolvedValue(sampleLevel);
+      progressRepo.hasProgressForLevel.mockResolvedValue(false);
+      slidesRepo.countByLevelId.mockResolvedValue(0);
+      slidesRepo.create.mockResolvedValue({ ...sampleSlide, type: 'TextCode' });
+      slidesRepo.getAdminDetail.mockResolvedValue({
+        ...sampleDetailBase, type: 'TextCode', text: 'Exemplo', code: 'const x = 1;', language: 'javascript',
+      });
+
+      await service.create('level-1', {
+        type: 'TextCode', title: 'Código', text: 'Exemplo', code: 'const x = 1;', language: 'javascript',
+      });
+      expect(slidesRepo.create).toHaveBeenCalledWith(expect.objectContaining({
+        textCode: { text: 'Exemplo', code: 'const x = 1;', language: 'javascript' },
+      }));
+    });
   });
 
   describe('update', () => {
+    it('rejects update of a missing or stale slide', async () => {
+      slidesRepo.findById.mockResolvedValueOnce(null).mockResolvedValueOnce(sampleSlide);
+      const input = { type: 'TextText' as const, title: 'Novo', primaryText: 'Texto', expectedUpdatedAt: '2026-09-01T00:00:00.000Z' };
+      await expect(service.update('missing', input)).rejects.toThrow(NotFoundException);
+      await expect(service.update('slide-1', { ...input, expectedUpdatedAt: '2026-08-01T00:00:00.000Z' })).rejects.toThrow(ConflictException);
+      expect(slidesRepo.update).not.toHaveBeenCalled();
+    });
+
     it('rejects changing slide type', async () => {
       slidesRepo.findById.mockResolvedValue(sampleSlide);
 
@@ -162,9 +217,39 @@ describe('AdminSlidesService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('updates TextText content when the concurrency timestamp matches', async () => {
+      slidesRepo.findById.mockResolvedValue(sampleSlide);
+      slidesRepo.getAdminDetail.mockResolvedValue({ ...sampleDetail, primaryText: 'Novo texto' });
+
+      const result = await service.update('slide-1', {
+        type: 'TextText', title: 'Novo', primaryText: 'Novo texto', expectedUpdatedAt: sampleSlide.updatedAt.toISOString(),
+      });
+      expect(slidesRepo.update).toHaveBeenCalledWith('slide-1', expect.objectContaining({
+        textText: { primaryText: 'Novo texto', secondaryText: null },
+      }));
+      expect(result).toMatchObject({ type: 'TextText', primaryText: 'Novo texto' });
+    });
+
+    it('rejects a replacement image when its media asset is missing', async () => {
+      slidesRepo.findById.mockResolvedValue({ ...sampleSlide, type: 'TextImage' });
+      mediaRepo.findById.mockResolvedValue(null);
+      await expect(service.update('slide-1', {
+        type: 'TextImage', title: 'Imagem', text: 'Texto', altText: 'Alt', mediaAssetId: 'missing',
+        expectedUpdatedAt: sampleSlide.updatedAt.toISOString(),
+      })).rejects.toThrow(NotFoundException);
+      expect(slidesRepo.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
+    it('rejects deletion when the slide or its parent level is missing', async () => {
+      slidesRepo.findById.mockResolvedValueOnce(null).mockResolvedValueOnce(sampleSlide);
+      levelsRepo.findById.mockResolvedValue(null);
+      await expect(service.delete('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('slide-1')).rejects.toThrow(NotFoundException);
+      expect(slidesRepo.delete).not.toHaveBeenCalled();
+    });
     it('rejects deleting slide of published level', async () => {
       slidesRepo.findById.mockResolvedValue(sampleSlide);
       levelsRepo.findById.mockResolvedValue({ ...sampleLevel, publishedAt: new Date() });
